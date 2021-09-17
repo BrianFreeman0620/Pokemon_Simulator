@@ -50,13 +50,15 @@ class Move:
             return ["Failure"]
         
 class Item:
-    def __init__(self, itemName, consumable, effect, secondEffect, multiplier):
+    def __init__(self, itemName, consumable, effect, secondEffect, multiplier,
+                 fling):
         self.itemName = itemName
         self.consumable = consumable
         self.effect = effect
         self.secondEffect = secondEffect
         self.multiplier = multiplier
         self.consumed = False
+        self.fling = fling
     
     def __str__(self):
         if self.consumed:
@@ -81,10 +83,13 @@ class Pokemon:
         self.Stats = {"HP" : 20, "Attack" : 10, "Defense" : 10,
                       "Special Attack": 10, "Special Defense": 10, 
                       "Speed" : 10}
+        self.IV = [15, 15, 15, 15, 15, 15]
+        self.EV = [0, 0, 0, 0, 0, 0]
         self.currentHp = 20
         self.statModifier = {"Attack" : 1, "Defense" : 1,
                       "Special Attack": 1, "Special Defense": 1, 
                       "Speed" : 1, "Accuracy": 1, "Evasion": 1}
+        self.plusNature = "HP"
         self.minusNature = "HP"
         self.status = "Healthy"
         self.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 0, "Trap" : 0, 
@@ -95,10 +100,63 @@ class Pokemon:
         self.recharge = 0
         self.chargeMove = None
         self.intangibility = False
+        self.transformed = False
+        self.tempPokemon = None
     
     def setBaseStat(self, statName, baseStat):
         if statName in self.Stats:
             self.BaseStats[statName] = baseStat
+            
+    def megaEvolve(self, megaDict, megaList):
+        for megaPokemon in megaList:
+            if self.pokemonName == megaPokemon:
+                try:
+                    if self.item.effect == "Mega" and megaDict[self.pokemonName][1] == self.item.itemName:
+                        self.setBaseStat("HP", megaDict[self.pokemonName][0].BaseStats["HP"])
+                        self.setBaseStat("Attack", megaDict[self.pokemonName][0].BaseStats["Attack"])
+                        self.setBaseStat("Defense", megaDict[self.pokemonName][0].BaseStats["Defense"])
+                        self.setBaseStat("Special Attack", megaDict[self.pokemonName][0].BaseStats["Special Attack"])
+                        self.setBaseStat("Special Defense", megaDict[self.pokemonName][0].BaseStats["Special Defense"])
+                        self.setBaseStat("Speed", megaDict[self.pokemonName][0].BaseStats["Speed"])
+                        
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        
+                        self.pokemonName = megaDict[self.pokemonName][0].pokemonName
+                        
+                        return True
+                except:
+                    if self.item.effect == "Mega" and megaDict[self.pokemonName + " X"][1] == self.item.itemName:
+                        self.setBaseStat("HP", megaDict[self.pokemonName + " X"][0].BaseStats["HP"])
+                        self.setBaseStat("Attack", megaDict[self.pokemonName + " X"][0].BaseStats["Attack"])
+                        self.setBaseStat("Defense", megaDict[self.pokemonName + " X"][0].BaseStats["Defense"])
+                        self.setBaseStat("Special Attack", megaDict[self.pokemonName + " X"][0].BaseStats["Special Attack"])
+                        self.setBaseStat("Special Defense", megaDict[self.pokemonName + " X"][0].BaseStats["Special Defense"])
+                        self.setBaseStat("Speed", megaDict[self.pokemonName + " X"][0].BaseStats["Speed"])
+                        
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        
+                        self.pokemonName = megaDict[self.pokemonName + " X"][0].pokemonName
+                        
+                        return True
+                    
+                    elif self.item.effect == "Mega" and megaDict[self.pokemonName + " Y"][1] == self.item.itemName:
+                        self.setBaseStat("HP", megaDict[self.pokemonName + " Y"][0].BaseStats["HP"])
+                        self.setBaseStat("Attack", megaDict[self.pokemonName + " Y"][0].BaseStats["Attack"])
+                        self.setBaseStat("Defense", megaDict[self.pokemonName + " Y"][0].BaseStats["Defense"])
+                        self.setBaseStat("Special Attack", megaDict[self.pokemonName + " Y"][0].BaseStats["Special Attack"])
+                        self.setBaseStat("Special Defense", megaDict[self.pokemonName + " Y"][0].BaseStats["Special Defense"])
+                        self.setBaseStat("Speed", megaDict[self.pokemonName + " Y"][0].BaseStats["Speed"])
+                        
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        
+                        self.pokemonName = megaDict[self.pokemonName + " Y"][0].pokemonName
+                        
+                        return True
+            
+        return False
     
     def setStats(self, level, posNature = "HP", negNature = "HP", 
                  IV = [15,15,15,15,15,15], EV = [0,0,0,0,0,0]):
@@ -120,6 +178,7 @@ class Pokemon:
                 self.Stats[stat] = int((int((2 * self.BaseStats[stat] 
                 + IV[counter] + (floor(EV[counter] * evFix)/4)) * level / 100) 
                     + 5) * 1.1)
+                self.plusNature = posNature
             elif negNature == stat and posNature != negNature:
                 self.Stats[stat] = int((int((2 * self.BaseStats[stat] 
                 + IV[counter] + (floor(EV[counter] * evFix)/4)) * level / 100) 
@@ -130,6 +189,8 @@ class Pokemon:
                 + IV[counter] + (floor(EV[counter] * evFix)/4)) * level / 100) 
                     + 5))
             counter += 1
+        self.IV = IV
+        self.EV = EV
     
     def newMove(self, newMove):
         for move in range(4):
@@ -249,6 +310,7 @@ class Team():
         self.activePokemon = None
         self.reflect = 0
         self.lightScreen = 0
+        self.mega = False
         
     def addPokemon(self, newPokemon):
         if self.alivePokemon < 6:
@@ -271,6 +333,12 @@ class Team():
     def Switch(self, position):
         if not self.pokemonList[position - 1] == None:
             if self.pokemonList[position - 1].currentHp > 0:
+                if self.activePokemon.transformed:
+                    self.activePokemon.transformed = False
+                    self.activePokemon.Stats = self.activePokemon.tempPokemon[0]
+                    self.activePokemon.Type1 = self.activePokemon.tempPokemon[1]
+                    self.activePokemon.Type2 = self.activePokemon.tempPokemon[2]
+                    self.activePokemon.Moves = self.activePokemon.tempPokemon[3]
                 if self.activePokemon.volatile["Badly Poison"] > 0:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 1, "Trap" : 0, 
                                                    "Blocked Moves" : [5], "Intangible" : " ", "Substitute" : 0}
@@ -283,7 +351,13 @@ class Team():
                 self.activePokemon.turnOut = 0
                 self.activePokemon = self.pokemonList[position - 1]
                 print("Switched to " + self.pokemonList[position - 1].pokemonName + "!")
-            
+   
+    def megaEvolve(self, megaDict, megaList):
+        tryMega = self.activePokemon.megaEvolve(megaDict, megaList)
+        if tryMega:
+            self.mega = True
+            print("The Pokemon mega evolved into " + self.activePokemon.pokemonName + "!")
+         
 class Battle():
     
     def __init__(self, Team1, Team2):
@@ -482,7 +556,20 @@ class Battle():
                         powerMult = 10
                 else:
                     powerMult = 1
-                damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) * pokemon1.Moves[moveNumber].power * powerMult
+                if pokemon1.Moves[moveNumber].moveName == "Fling":
+                    if pokemon1.item.fling > 0 and not pokemon1.item.consumed:
+                        damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) * pokemon1.item.fling * powerMult
+                              * (pokemon1.Stats["Attack"]/pokemon2.Stats["Defense"])) / 50) 
+                                + 2) * (stab * typeEffect * pokemon1.statModifier["Attack"] /
+                                   pokemon2.statModifier["Defense"] * (randint(85, 100) / 100)
+                                   * statusMult * itemMult * weatherBoost))
+                        print(pokemon1.pokemonName + " flung its " + pokemon1.item.itemName + "!")
+                        pokemon1.item.Consume()
+                    else:
+                        damage = 0
+                        print(pokemon1.pokemonName + " failed to fling a thing!")
+                else:
+                    damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) * pokemon1.Moves[moveNumber].power * powerMult
                           * (pokemon1.Stats["Attack"]/pokemon2.Stats["Defense"])) / 50) 
                             + 2) * (stab * typeEffect * pokemon1.statModifier["Attack"] /
                                pokemon2.statModifier["Defense"] * (randint(85, 100) / 100)
@@ -557,11 +644,10 @@ class Battle():
                     else:
                         typeEffect = 0
                         damage = 0
-        if damage < 1 and typeEffect > 0:
-            damage = 1
-        elif pokemon1.turnOut > 1 and pokemon1.Moves[moveNumber].moveName == "Fake Out":
+        if (pokemon1.turnOut > 1 and pokemon1.Moves[moveNumber].moveName == "Fake Out") or (damage == 0 and pokemon1.Moves[moveNumber].moveName == "Fling"):
             damage = 0
-        
+        elif damage < 1 and typeEffect > 0:
+            damage = 1
         return damage, typeEffect
         
     def Attack(self, moveNumber, priority1, priority2, playerNum, computer, computer2 = False):
@@ -749,16 +835,27 @@ class Battle():
                     else:
                         if not pokemon2.intangibility and not (pokemon2.volatile["Substitute"] > 0  and not pokemon1.Moves[moveNumber - 1].sound):
                             if typeEffect > 0 or pokemon1.Moves[moveNumber - 1].power == 0:
-                                pokemon2.modifyStat(secondaryList[1], secondaryList[3])
-                                if pokemon1.Moves[moveNumber - 1].moveName == "Parting Shot" and attackingTeam.alivePokemon > 1:
-                                    if not computer:
-                                        attackingTeam.showTeam()
-                                        position = int(input("\nWho would you like to switch to? "))
-                                    else:
-                                        position = randint(1, 6)
-                                        while attackingTeam.pokemonList[position - 1].currentHp == 0:
+                                if pokemon1.Moves[moveNumber - 1].moveName == "Transform" and not (pokemon1.transformed or pokemon2.transformed):
+                                    pokemon1.tempPokemon = [pokemon1.Stats, pokemon1.Type1, pokemon1.Type2, pokemon1.Moves]
+                                    pokemon1.Stats = pokemon2.Stats
+                                    pokemon1.Type1 = pokemon2.Type1
+                                    pokemon1.Type2 = pokemon2.Type2
+                                    pokemon1.Moves = copy.deepcopy(pokemon2.Moves)
+                                    for movePP in range(4):
+                                        pokemon1.Moves[movePP].currentPP = 5
+                                    pokemon1.transformed = True
+                                    print(pokemon1.pokemonName + " transformed into " + pokemon2.pokemonName + "!")
+                                else:
+                                    pokemon2.modifyStat(secondaryList[1], secondaryList[3])
+                                    if pokemon1.Moves[moveNumber - 1].moveName == "Parting Shot" and attackingTeam.alivePokemon > 1:
+                                        if not computer:
+                                            attackingTeam.showTeam()
+                                            position = int(input("\nWho would you like to switch to? "))
+                                        else:
                                             position = randint(1, 6)
-                                    attackingTeam.Switch(position)
+                                            while attackingTeam.pokemonList[position - 1].currentHp == 0:
+                                                position = randint(1, 6)
+                                        attackingTeam.Switch(position)
                 elif secondaryList[0] == "Status":
                     if secondaryList[2] == "Self":
                         if pokemon1.status == "Healthy" or pokemon1.Moves[moveNumber - 1].moveName in ["Refresh", "Rest"]:
@@ -1009,7 +1106,7 @@ class Battle():
                 pokemon2.changeStatus("Healthy")
                 print(pokemon2.pokemonName + " was woken up with Wake-Up Slap!")
                      
-    def Turn(self, computer = False):
+    def Turn(self, megaDict, megaList, computer = False):
         alive1 = int(self.team1.alivePokemon)
         alive2 = int(self.team2.alivePokemon)
         player1Choice = "nothing"
@@ -1121,20 +1218,24 @@ class Battle():
                 for attack in range(4):
                     if self.team2.activePokemon.Moves[attack].currentPP > 0 and (attack + 1) not in self.team2.activePokemon.volatile["Blocked Moves"]:
                         aveDamage = 0
-                        for i in range(15):
+                        for i in range(32):
                             damage, unimportant = self.damageCalc(attack + 1, 2)
                             aveDamage += damage
-                        aveDamage /= 15
-                        strongestAttack[attack + 1] = damage
+                        aveDamage /= 32
+                        strongestAttack[attack + 1] = int(aveDamage/self.team1.activePokemon.Stats["HP"] * 64)
+                        if aveDamage > self.team1.activePokemon.currentHp:
+                            strongestAttack[attack + 1] *= 3 
+                            if self.team2.activePokemon.Moves[attack].priority >= 1:
+                                strongestAttack[attack + 1] *= 2
                         if self.team2.activePokemon.Moves[attack].moveName in ["U-turn", "Volt Switch", "Flip Turn"] and self.team2.alivePokemon > 1:
-                            strongestAttack[attack + 1] *= 7
+                            strongestAttack[attack + 1] *= 1.5
                         elif self.team2.activePokemon.Moves[attack].charge in ["Charge", "Recharge"] and self.team2.activePokemon.currentHp > .5 * self.team2.activePokemon.Stats["HP"]:
                             strongestAttack[attack + 1] *= .5
                         elif self.team2.activePokemon.Moves[attack].phySpe == "Status":
                             if self.team2.activePokemon.Moves[attack].healing > 0:
-                                strongestAttack[attack + 1] = self.team2.activePokemon.Stats["HP"] - self.team1.activePokemon.currentHp
-                            elif self.team2.activePokemon.Moves[attack].stat in ["Sleep", "Burn", "Poison", "Badly Poison", "Paralyze"] and self.team1.activePokemon.status == "Healthy" and not (self.team2.activePokemon.Type1.typeName in ["Fire", "Poison", "Electric", "Steel"] or self.team2.activePokemon.Type2.typeName in ["Fire", "Poison", "Electric", "Steel"]) and self.team2.activePokemon.turnOut <= 2:
-                                strongestAttack[attack + 1] = (self.team2.activePokemon.Moves[attack].accuracy * self.team2.activePokemon.currentHp) / 100
+                                strongestAttack[attack + 1] = self.team2.activePokemon.Stats["HP"] - self.team2.activePokemon.currentHp
+                            elif self.team2.activePokemon.Moves[attack].stat in ["Sleep", "Burn", "Poison", "Badly Poison", "Paralyze"] and self.team1.activePokemon.status == "Healthy" and not (self.team1.activePokemon.Type1.typeName in ["Fire", "Poison", "Electric", "Steel"] or self.team1.activePokemon.Type2.typeName in ["Fire", "Poison", "Electric", "Steel"]) and self.team2.activePokemon.turnOut <= 2:
+                                strongestAttack[attack + 1] = (self.team2.activePokemon.Moves[attack].accuracy * self.team2.activePokemon.currentHp / self.team2.activePokemon.Stats["HP"]) / 2
                             elif self.team2.activePokemon.Moves[attack].stat in ["Sleep", "Burn", "Poison", "Badly Poison", "Paralyze"] and not self.team1.activePokemon.status == "Healthy":
                                 strongestAttack[attack + 1] = -1
                 mostDamage = -2
@@ -1144,11 +1245,22 @@ class Battle():
                         mostPowerfulMove = powers
                 team2Move = mostPowerfulMove
                 switchChance = randint(1, 4)
-                if strongestAttack[powers] < self.team1.activePokemon.Stats["HP"] * (1/16) and self.team2.alivePokemon > 1 and switchChance == 1 and self.team2.activePokemon.volatile["Trap"] == 0:
+                if strongestAttack[powers] < 8 and self.team2.alivePokemon > 1 and switchChance == 1 and self.team2.activePokemon.volatile["Trap"] == 0:
                     player2Choice = "switch"
-                    player2Switch = randint(1, 6)
-                    while self.team2.pokemonList[player2Switch - 1] == self.team2.activePokemon or self.team2.pokemonList[player2Switch - 1].currentHp <= 0:
-                        player2Switch = randint(1, 6)
+                    player2SwitchList = []
+                    for pokemonSlot in range(6):
+                        mostHP = 0
+                        for pokemonSlot2 in range(6):
+                            if self.team2.pokemonList[pokemonSlot2].currentHp > mostHP and pokemonSlot not in player2SwitchList:
+                                mostHP = self.team2.pokemonList[pokemonSlot2].currentHp
+                                healthiest = pokemonSlot2
+                        player2SwitchList.append(healthiest + 1)
+                    count = 0
+                    player2Switch = player2SwitchList[0]
+                    while self.team2.pokemonList[player2SwitchList[count] - 1] == self.team2.activePokemon or self.team2.pokemonList[player2SwitchList[count] - 1].currentHp <= 0:
+                        print(player2Switch[count])
+                        player2Switch = player2SwitchList[count]
+                        count += 1
                     priority2 = 6
                 else:
                     player2Choice = "attack"
@@ -1175,6 +1287,11 @@ class Battle():
             self.team1.Switch(player1Switch)
         if player2Choice == "switch":
             self.team2.Switch(player2Switch)
+        
+        if not self.team1.mega:
+            self.team1.megaEvolve(megaDict, megaList)
+        if not self.team2.mega:
+            self.team2.megaEvolve(megaDict, megaList)
         
         if self.team1.activePokemon.Stats["Speed"] * self.team1.activePokemon.statModifier["Speed"] * pokemon1Para > self.team2.activePokemon.Stats["Speed"] * self.team2.activePokemon.statModifier["Speed"] * pokemon2Para and priority1 >= priority2:
             if player1Choice == "attack":
@@ -1215,8 +1332,14 @@ class Battle():
             if self.team2.activePokemon.Moves[team2Move - 1].moveName in ["Protect", "Detect"]:
                 self.team2.activePokemon.intangibility = False
         
-        if self.team1.activePokemon.item.effect == "Heal" and not self.team1.activePokemon.item.consumed:
-            if self.team1.activePokemon.item.multiplier > 1:
+        if self.team1.activePokemon.item.effect in ["Heal", "Boost"] and not self.team1.activePokemon.item.consumed:
+            if self.team1.activePokemon.item.multiplier == 1.5:
+                if self.team1.activePokemon.currentHp < .25 * self.team1.activePokemon.Stats["HP"]:
+                    self.team1.activePokemon.modifyStat(self.team1.activePokemon.item.effect2, 1)
+                    if self.team1.activePokemon.item.consumable:
+                        self.team1.activePokemon.Consume()
+                    print(self.team1.activePokemon.pokemonName + " boosted its " + self.team1.activePokemon.item.effect2 + " with its berry!")
+            elif self.team1.activePokemon.item.multiplier > 1:
                 if self.team1.activePokemon.currentHp < .5 * self.team1.activePokemon.Stats["HP"]:
                     self.team1.activePokemon.currentHp += self.team1.activePokemon.item.multiplier
                     if self.team1.activePokemon.item.consumable:
@@ -1511,11 +1634,16 @@ def ItemList():
     infile = pd.read_excel('Pokemon Simulator Stats.xlsx', 'Sheet3')
     
     itemDict = {}
+    itemSpecialtyDict = {}
     itemName = []
     itemEffect = []
     itemsecondEffect = []
     itemMultiplier = []
     itemConsumable = []
+    itemSpecialty = []
+    itemNormalName = []
+    itemSpecialtyName = []
+    itemFling = []
     
     for strName in infile["Item"]:
         itemName.append(strName)
@@ -1531,19 +1659,97 @@ def ItemList():
         
     for boolConsume in infile["Consumable"]:
         itemConsumable.append(bool(boolConsume))
+        
+    for strSpecialty in infile["Signature"]:
+        itemSpecialty.append(strSpecialty)
+        
+    for intFling in infile["Fling"]:
+        itemFling.append(int(intFling))
     
     for item in range(len(itemName)):
-        itemDict[itemName[item]] = Item(itemName[item], itemConsumable[item], 
-                itemEffect[item], itemsecondEffect[item], itemMultiplier[item])
+        if itemSpecialty[item] == "False":
+            itemDict[itemName[item]] = Item(itemName[item], itemConsumable[item], 
+                    itemEffect[item], itemsecondEffect[item], itemMultiplier[item],
+                    itemFling[item])
+            itemNormalName.append(itemName[item])
+        else:
+            if itemSpecialty[item] not in itemSpecialtyDict:
+                itemSpecialtyDict[itemSpecialty[item]] = {}        
+            itemSpecialtyDict[itemSpecialty[item]][itemName[item]] = Item(itemName[item], itemConsumable[item], 
+                       itemEffect[item], itemsecondEffect[item], 
+                       itemMultiplier[item], itemFling[item])
+            itemSpecialtyName.append(itemName[item])
+                
+    return itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName
+
+def Megas(pokemonDict):
+    infile = pd.read_excel('Pokemon Simulator Stats.xlsx', 'Sheet4')
+    
+    pokedexDict = {}
+    pokemonName = []
+    pokemonLabel = []
+    pokemonItem = []
+    pokemonType1 = []
+    pokemonType2 = []
+    pokemonAt = []
+    pokemonDe = []
+    pokemonSa = []
+    pokemonSd = []
+    pokemonSp = []
+    
+    for strName in infile["Pokemon"]:
+        pokemonName.append(strName)
         
-    return itemDict, itemName
+    for strLabel in infile["Label"]:
+        if strLabel == "None":
+            pokemonLabel.append("")
+        else:
+            pokemonLabel.append(" " + strLabel)
+            
+    for strItem in infile["Item"]:
+        pokemonItem.append(strItem)
+    
+    for strType1 in infile["Type 1"]:
+        pokemonType1.append(strType1)
+        
+    for strType2 in infile["Type 2"]:
+        pokemonType2.append(strType2)
+        
+    for intAt in infile["Attack"]:
+        pokemonAt.append(int(intAt))
+        
+    for intDe in infile["Defense"]:
+        pokemonDe.append(int(intDe))
+        
+    for intSa in infile["Special Attack"]:
+        pokemonSa.append(int(intSa))
+        
+    for intSd in infile["Special Defense"]:
+        pokemonSd.append(int(intSd))
+        
+    for intSp in infile["Speed"]:
+        pokemonSp.append(int(intSp))
+    
+    for pokemonNum in range(len(pokemonName)):
+        pokemonObj = Pokemon("Mega " + pokemonName[pokemonNum] + pokemonLabel[pokemonNum], 
+                             pokemonType1[pokemonNum], pokemonType2[pokemonNum])
+        pokemonObj.setBaseStat("HP", pokemonDict[pokemonName[pokemonNum]].BaseStats["HP"])
+        pokemonObj.setBaseStat("Attack", pokemonAt[pokemonNum])
+        pokemonObj.setBaseStat("Defense", pokemonDe[pokemonNum])
+        pokemonObj.setBaseStat("Special Attack", pokemonSa[pokemonNum])
+        pokemonObj.setBaseStat("Special Defense", pokemonSd[pokemonNum])
+        pokemonObj.setBaseStat("Speed", pokemonSp[pokemonNum])
+        pokedexDict[pokemonName[pokemonNum] + pokemonLabel[pokemonNum]] = [pokemonObj, pokemonItem[pokemonNum]]
+        
+    return pokedexDict, pokemonName
 
 def test():
     pokemonDict, pokemonList = Pokedex()
     moveDict, moveList, struggle = MoveList()
-    itemDict, itemList = ItemList()
+    itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName = ItemList()
+    megaDict, megaList = Megas(pokemonDict)
     
-    '''pokemon1 = copy.deepcopy(pokemonDict["Aggron"])'''
+    '''pokemon1 = copy.deepcopy(pokemonDict["Charizard"])'''
     pokemon1 = copy.deepcopy(pokemonDict[choice(pokemonList)])
     pokemon1.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
@@ -1552,14 +1758,20 @@ def test():
                           randint(0,31), randint(0,31), randint(0,31)], 
                    [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
                     randint(0, 252), randint(0, 252)])
-    '''pokemon1.newMove(copy.deepcopy(moveDict["Solar Beam"]))'''
+    pokemon1.newMove(copy.deepcopy(moveDict["Fling"]))
     '''pokemon1.newMove(copy.deepcopy(moveDict["Sunny Day"]))'''
-    pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+    '''pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))'''
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     '''pokemon1.newItem(itemDict["Shuca Berry"])'''
-    pokemon1.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon1.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon1.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon1.pokemonName][signatureItem]))
+    else:
+        pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon1.replaceMove(struggle, 5)
     
     pokemon2 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1575,7 +1787,13 @@ def test():
     pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon2.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon2.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon2.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon2.pokemonName][signatureItem]))
+    else:
+        pokemon2.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon2.replaceMove(struggle, 5)
     
     pokemon3 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1590,7 +1808,13 @@ def test():
     pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon3.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon3.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon3.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon3.newItem(copy.deepcopy(itemSpecialtyDict[pokemon3.pokemonName][signatureItem]))
+    else:
+        pokemon3.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon3.replaceMove(struggle, 5)
     
     pokemon4 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1605,7 +1829,13 @@ def test():
     pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon4.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon4.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon4.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon4.newItem(copy.deepcopy(itemSpecialtyDict[pokemon4.pokemonName][signatureItem]))
+    else:
+        pokemon4.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon4.replaceMove(struggle, 5)
     
     pokemon5 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1620,7 +1850,13 @@ def test():
     pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon5.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon5.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon5.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon5.newItem(copy.deepcopy(itemSpecialtyDict[pokemon5.pokemonName][signatureItem]))
+    else:
+        pokemon5.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon5.replaceMove(struggle, 5)
     
     pokemon6 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1635,7 +1871,13 @@ def test():
     pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon6.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon6.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon6.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon6.newItem(copy.deepcopy(itemSpecialtyDict[pokemon6.pokemonName][signatureItem]))
+    else:
+        pokemon6.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon6.replaceMove(struggle, 5)
     
     pokemon7 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1650,7 +1892,13 @@ def test():
     pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon7.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon7.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon7.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon7.newItem(copy.deepcopy(itemSpecialtyDict[pokemon7.pokemonName][signatureItem]))
+    else:
+        pokemon7.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon7.replaceMove(struggle, 5)
     
     pokemon8 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1665,7 +1913,13 @@ def test():
     pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon8.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon8.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon8.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon8.newItem(copy.deepcopy(itemSpecialtyDict[pokemon8.pokemonName][signatureItem]))
+    else:
+        pokemon8.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon8.replaceMove(struggle, 5)
     
     pokemon9 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1680,7 +1934,13 @@ def test():
     pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon9.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon9.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon9.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon9.newItem(copy.deepcopy(itemSpecialtyDict[pokemon9.pokemonName][signatureItem]))
+    else:
+        pokemon9.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon9.replaceMove(struggle, 5)
     
     pokemon10 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1695,7 +1955,13 @@ def test():
     pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon10.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon10.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon10.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon10.newItem(copy.deepcopy(itemSpecialtyDict[pokemon10.pokemonName][signatureItem]))
+    else:
+        pokemon10.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon10.replaceMove(struggle, 5)
     
     pokemon11 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1710,7 +1976,13 @@ def test():
     pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon11.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon11.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon11.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon11.newItem(copy.deepcopy(itemSpecialtyDict[pokemon11.pokemonName][signatureItem]))
+    else:
+        pokemon11.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon11.replaceMove(struggle, 5)
     
     pokemon12 = copy.deepcopy(pokemonDict[choice(pokemonList)])
@@ -1725,7 +1997,13 @@ def test():
     pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon12.newItem(copy.deepcopy(itemDict[choice(itemList)]))
+    if pokemon12.pokemonName in itemSpecialtyDict:
+        signatureItem = choice(itemSpecialtyName)
+        while signatureItem not in itemSpecialtyDict[pokemon12.pokemonName]:
+            signatureItem = choice(itemSpecialtyName)
+        pokemon12.newItem(copy.deepcopy(itemSpecialtyDict[pokemon12.pokemonName][signatureItem]))
+    else:
+        pokemon12.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon12.replaceMove(struggle, 5)
     
     testTeam = Team()
@@ -1753,7 +2031,7 @@ def test():
     testBattle.fixType()
     
     while testTeam.alivePokemon > 0 and testTeam2.alivePokemon > 0:
-        testBattle.Turn(True)
+        testBattle.Turn(megaDict, megaList, True)
         if testTeam.alivePokemon == 0:
             print("Team 2 wins!")
         elif testTeam2.alivePokemon == 0:
