@@ -1,7 +1,21 @@
 from random import *
 from math import *
+from graphics import *
 import pandas as pd
 import copy
+
+def Clicked(bottomLeft, topRight, point):
+    bottomLeftX = bottomLeft.getX()
+    bottomLeftY = bottomLeft.getY()
+    topRightX = topRight.getX()
+    topRightY = topRight.getY()
+    pointX = point.getX()
+    pointY = point.getY()
+    
+    if bottomLeftX < pointX and topRightX > pointX:
+        if bottomLeftY < pointY and topRightY > pointY:
+            return True
+    return False
 
 class Type:
     
@@ -108,13 +122,15 @@ class Ability:
 class Pokemon:
     
     def __init__(self, pokemonName, ability, typeName1, typeName2 = "None", 
-                 gender = ["Male"]):
+                 gender = ["Male"], win = None):
+        self.win = win
+        
         self.pokemonName = pokemonName
         self.ability = ability
         self.Type1 = Type(typeName1)
         self.Type2 = Type(typeName2)
         
-        self.Moves = [None, None, None, None, None]
+        self.Moves = [None, None, None, None, None, None]
         
         self.BaseStats = {"HP" : 48, "Attack" : 48, "Defense" : 48,
                       "Special Attack": 48, "Special Defense": 48, 
@@ -165,6 +181,15 @@ class Pokemon:
             self.shiny = True
         else:
             self.shiny = False
+    
+    def addToWin(self, win):
+        self.win = win
+        
+    def drawCurrentText(self, text):
+        self.currentText = Text(Point(250,75), text)
+        self.currentText.draw(self.win)
+        self.win.getMouse()
+        self.currentText.undraw()
     
     def setBaseStat(self, statName, baseStat):
         if statName in self.Stats:
@@ -297,16 +322,10 @@ class Pokemon:
         
     def replaceMove(self, newMove, position):
         self.Moves[position - 1] = newMove
-        
-    def showMoves(self):
-        for move in range(4):
-            if not self.Moves[move] == None:
-                print("Move " + str(move + 1) + ": " + self.Moves[move].moveName + " (" 
-                      + str(self.Moves[move].currentPP) + "/" + str(self.Moves[move].pp) + ")")
                 
     def newItem(self, item):
         self.item = item
-        if self.ability.abilityName == "Klutz":
+        if self.ability.abilityName == "Klutz" and not self.item.fling == 0:
             self.item.klutz = True
             self.item.Consume()
                 
@@ -343,9 +362,9 @@ class Pokemon:
                     newModifier = 12
                 self.statModifier[statSplit[statNumber]] = accuracyStats[newModifier]
             if int(modifierSplit[statNumber]) < 0 or (int(modifierSplit[statNumber]) > 0 and self.ability.abilityName == "Contrary"):
-                print(self.pokemonName + "'s " + statSplit[statNumber] + " was lowered!")
+                self.drawCurrentText(self.pokemonName + "'s " + statSplit[statNumber] + " was lowered!")
             elif int(modifierSplit[statNumber]) > 0 or (int(modifierSplit[statNumber]) < 0 and self.ability.abilityName == "Contrary"):
-                print(self.pokemonName + "'s " + statSplit[statNumber] + " was raised!")
+                self.drawCurrentText(self.pokemonName + "'s " + statSplit[statNumber] + " was raised!")
     
     def changeStatus(self, status):
         success = False
@@ -400,28 +419,30 @@ class Pokemon:
             
         if success:
             if status == "Burn":
-                print(self.pokemonName + " was burned!")
+                self.drawCurrentText(self.pokemonName + " was burned!")
             elif status == "Poison":
-                print(self.pokemonName + " was poisoned!")
+                self.drawCurrentText(self.pokemonName + " was poisoned!")
             elif status == "Paralyze":
-                print(self.pokemonName + " was paralyzed! It may be unable to move!")
+                self.drawCurrentText(self.pokemonName + " was paralyzed! It may be unable to move!")
             elif status == "Freeze":
-                print(self.pokemonName + " was frozen solid!")
+                self.drawCurrentText(self.pokemonName + " was frozen solid!")
             elif status == "Sleep":
-                print(self.pokemonName + " was put to sleep!")
+                self.drawCurrentText(self.pokemonName + " was put to sleep!")
             elif status == "Confuse":
-                print(self.pokemonName + " was confused!")
+                self.drawCurrentText(self.pokemonName + " was confused!")
             elif status == "Infatuation":
-                print(self.pokemonName + " fell in love!")
+                self.drawCurrentText(self.pokemonName + " fell in love!")
             elif status == "Pumped":
-                print(self.pokemonName + " is getting pumped!")
+                self.drawCurrentText(self.pokemonName + " is getting pumped!")
                 
     def Gender(self):
         self.gender = choice(self.genderRatio)
 
 class Team():
     
-    def __init__(self):
+    def __init__(self, win = None):
+        self.win = win
+        
         self.pokemonList = [None, None, None, None, None, None]
         self.alivePokemon = 0
         self.activePokemon = None
@@ -430,7 +451,20 @@ class Team():
         self.mega = False
         self.entryHazards = {"Spikes" : 0, "Toxic Spikes" : 0, "Stealth Rock" : 0,
                              "Sticky Web" : 0}
-        
+        self.textBoxBottomLeft = Point(0,0)
+        self.textBoxTopRight = Point(500,150)
+    
+    def addToWin(self, win):
+        self.win = win
+        for pokemon in self.pokemonList:
+            pokemon.addToWin(self.win)
+            
+    def drawCurrentText(self, text):
+        self.currentText = Text(Point(250,75), text)
+        self.currentText.draw(self.win)
+        self.win.getMouse()
+        self.currentText.undraw()
+    
     def addPokemon(self, newPokemon):
         if self.alivePokemon < 6:
             for pokemonNumber in range(6):
@@ -440,34 +474,6 @@ class Team():
                         self.activePokemon = self.pokemonList[pokemonNumber]
                     break
             self.alivePokemon += 1
-    
-    def showTeam(self):
-        for pokemonNumber in range(6):
-            if not self.pokemonList[pokemonNumber] == None:
-                if not self.pokemonList[pokemonNumber].shiny:
-                    if self.pokemonList[pokemonNumber].gender == "None":
-                        print("Pokemon " + str(pokemonNumber + 1) + ": " 
-                          + self.pokemonList[pokemonNumber].pokemonName + " "
-                          + str(self.pokemonList[pokemonNumber].currentHp) + "/" 
-                          + str(self.pokemonList[pokemonNumber].Stats["HP"]))
-                    else:
-                        print("Pokemon " + str(pokemonNumber + 1) + ": " 
-                          + self.pokemonList[pokemonNumber].pokemonName + " ("
-                          + self.pokemonList[pokemonNumber].gender + ") "
-                          + str(self.pokemonList[pokemonNumber].currentHp) + "/" 
-                          + str(self.pokemonList[pokemonNumber].Stats["HP"]))
-                else:
-                    if self.pokemonList[pokemonNumber].gender == "None":
-                        print("Pokemon " + str(pokemonNumber + 1) + ": " 
-                          + self.pokemonList[pokemonNumber].pokemonName + " Shiny "
-                          + str(self.pokemonList[pokemonNumber].currentHp) + "/" 
-                          + str(self.pokemonList[pokemonNumber].Stats["HP"]))
-                    else:
-                        print("Pokemon " + str(pokemonNumber + 1) + ": " 
-                          + self.pokemonList[pokemonNumber].pokemonName + " ("
-                          + self.pokemonList[pokemonNumber].gender + ") Shiny "
-                          + str(self.pokemonList[pokemonNumber].currentHp) + "/" 
-                          + str(self.pokemonList[pokemonNumber].Stats["HP"]))
     
     def Switch(self, position):
         if not self.pokemonList[position - 1] == None:
@@ -499,7 +505,7 @@ class Team():
                 self.activePokemon.turnOut = 0
                 self.activePokemon.ability.deneutralize()
                 self.activePokemon = self.pokemonList[position - 1]
-                print("Switched to " + self.pokemonList[position - 1].pokemonName + "!")
+                self.drawCurrentText("Switched to " + self.pokemonList[position - 1].pokemonName + "!")
                 if not self.activePokemon.item.itemName == "Heavy-Duty Boots":
                     if self.entryHazards["Spikes"] > 0 and not(self.activePokemon.Type1.typeName == "Flying" or self.activePokemon.Type2.typeName == "Flying" or self.activePokemon.ability.abilityName == "Levitate"):
                         if self.entryHazards["Spikes"] == 1:
@@ -508,7 +514,7 @@ class Team():
                             self.activePokemon.currentHp -= round(self.activePokemon.Stats["HP"] / 6)
                         else:
                             self.activePokemon.currentHp -= round(self.activePokemon.Stats["HP"] / 4)
-                        print(self.activePokemon.pokemonName + " was hurt by Spikes!")
+                        self.drawCurrentText(self.activePokemon.pokemonName + " was hurt by Spikes!")
                     if self.entryHazards["Stealth Rock"] == 1:
                         rockMatchUp = {"Bug" : 2, "Dark" : 1, "Dragon" : 1, "Electric" : 1, 
                                        "Fairy" : 1, "Fighting" : .5, "Fire" : 2, "Flying" : 2, 
@@ -516,40 +522,657 @@ class Team():
                                        "Normal" : 1, "Poison" : 1, "Psychic" : 1, "Rock" : 1, 
                                        "Steel" : .5, "Water" : 1, "None" : 1}
                         self.activePokemon.currentHp -= round(self.activePokemon.Stats["HP"] / 8 * rockMatchUp[self.activePokemon.Type1.typeName] * rockMatchUp[self.activePokemon.Type2.typeName])
-                        print("Pointed stones dug into " + self.activePokemon.pokemonName + "!")
+                        self.drawCurrentText("Pointed stones dug into " + self.activePokemon.pokemonName + "!")
                     if self.entryHazards["Toxic Spikes"] > 0 and not(self.activePokemon.Type1.typeName == "Flying" or self.activePokemon.Type2.typeName == "Flying" or self.activePokemon.ability.abilityName == "Levitate"):
                         if self.activePokemon.Type1.typeName == "Poison" or self.activePokemon.Type2.typeName == "Poison":
                             self.entryHazards["Toxic Spikes"] = 0
-                            print("The toxic spikes disappeared under " + self.activePokemon.pokemonName + "'s feet!")
+                            self.drawCurrentText("The toxic spikes disappeared under " + self.activePokemon.pokemonName + "'s feet!")
                         elif not(self.activePokemon.Type1.typeName == "Steel" or self.activePokemon.Type2.typeName == "Steel"):
                             if self.entryHazards["Toxic Spikes"] == 1:
                                 self.activePokemon.changeStatus("Poison")
                             else:
                                 self.activePokemon.changeStatus("Badly Poison")
                     if self.entryHazards["Sticky Web"] == 1 and not(self.activePokemon.Type1.typeName == "Flying" or self.activePokemon.Type2.typeName == "Flying" or self.activePokemon.ability.abilityName == "Levitate"):
-                        print(self.activePokemon.pokemonName + " got caught in a sticky web!")
-                        self.activePokemon.modifyStats("Speed", -1)
+                        self.drawCurrentText(self.activePokemon.pokemonName + " got caught in a sticky web!")
+                        self.activePokemon.modifyStat("Speed", -1)
                     if self.activePokemon.currentHp <= 0:
-                        print(self.activePokemon + " fainted!")
+                        self.drawCurrentText(self.activePokemon + " fainted!")
                         while self.pokemonList[position - 1].currentHp <= 0:
-                            self.showTeam()
-                            position = int(input("Who would you like to switch to? "))
+                            position = self.switchMenu()
                         self.Switch(position)
                 
     def megaEvolve(self, megaDict, megaList):
         tryMega = self.activePokemon.megaEvolve(megaDict, megaList)
         if tryMega:
             self.mega = True
-            print("The Pokemon mega evolved into " + self.activePokemon.pokemonName + "!")
+            self.drawCurrentText("The Pokemon mega evolved into " + self.activePokemon.pokemonName + "!")
+            
+    def switchMenu(self):
+        pokemonColorList = []
+        for pokemon in self.pokemonList:
+            if pokemon.currentHp >= pokemon.Stats["HP"] * .5:
+                pokemonColorList.append("Green")
+            elif pokemon.currentHp >= pokemon.Stats["HP"] * .125:
+                pokemonColorList.append("Yellow")
+            elif pokemon.currentHp <= 0:
+                pokemonColorList.append("Grey")
+            else:
+                pokemonColorList.append("Red")
+                
+        pokemon1BoxBottomLeft = Point(0, 100)
+        pokemon1BoxTopRight = Point(250, 150)
+        pokemon1Box = Rectangle(pokemon1BoxBottomLeft, pokemon1BoxTopRight)
+        pokemon1Box.setFill(pokemonColorList[0])
+        pokemon1Box.setWidth(6)
+        pokemon1Box.draw(self.win)
+        
+        pokemon1Text = Text(Point(125,125), self.pokemonList[0].pokemonName + " " + str(self.pokemonList[0].currentHp) + "/" + str(self.pokemonList[0].Stats["HP"]))
+        pokemon1Text.setSize(10)
+        pokemon1Text.draw(self.win)
+        
+        pokemon2BoxBottomLeft = Point(250, 100)
+        pokemon2BoxTopRight = Point(500, 150)
+        pokemon2Box = Rectangle(pokemon2BoxBottomLeft, pokemon2BoxTopRight)
+        pokemon2Box.setFill(pokemonColorList[1])
+        pokemon2Box.setWidth(6)
+        pokemon2Box.draw(self.win)
+        
+        pokemon2Text = Text(Point(375,125), self.pokemonList[1].pokemonName + " " + str(self.pokemonList[1].currentHp) + "/" + str(self.pokemonList[1].Stats["HP"]))
+        pokemon2Text.setSize(10)
+        pokemon2Text.draw(self.win)
+        
+        pokemon3BoxBottomLeft = Point(0, 50)
+        pokemon3BoxTopRight = Point(250, 100)
+        pokemon3Box = Rectangle(pokemon3BoxBottomLeft, pokemon3BoxTopRight)
+        pokemon3Box.setFill(pokemonColorList[2])
+        pokemon3Box.setWidth(6)
+        pokemon3Box.draw(self.win)
+        
+        pokemon3Text = Text(Point(125,75), self.pokemonList[2].pokemonName + " " + str(self.pokemonList[2].currentHp) + "/" + str(self.pokemonList[2].Stats["HP"]))
+        pokemon3Text.setSize(10)
+        pokemon3Text.draw(self.win)
+        
+        pokemon4BoxBottomLeft = Point(250, 50)
+        pokemon4BoxTopRight = Point(500, 100)
+        pokemon4Box = Rectangle(pokemon4BoxBottomLeft, pokemon4BoxTopRight)
+        pokemon4Box.setFill(pokemonColorList[3])
+        pokemon4Box.setWidth(6)
+        pokemon4Box.draw(self.win)
+        
+        pokemon4Text = Text(Point(375,75), self.pokemonList[3].pokemonName + " " + str(self.pokemonList[3].currentHp) + "/" + str(self.pokemonList[3].Stats["HP"]))
+        pokemon4Text.setSize(10)
+        pokemon4Text.draw(self.win)
+        
+        pokemon5BoxBottomLeft = Point(0, 0)
+        pokemon5BoxTopRight = Point(250, 50)
+        pokemon5Box = Rectangle(pokemon5BoxBottomLeft, pokemon5BoxTopRight)
+        pokemon5Box.setFill(pokemonColorList[4])
+        pokemon5Box.setWidth(6)
+        pokemon5Box.draw(self.win)
+        
+        pokemon5Text = Text(Point(125,25), self.pokemonList[4].pokemonName + " " + str(self.pokemonList[4].currentHp) + "/" + str(self.pokemonList[4].Stats["HP"]))
+        pokemon5Text.setSize(10)
+        pokemon5Text.draw(self.win)
+        
+        pokemon6BoxBottomLeft = Point(250, 0)
+        pokemon6BoxTopRight = Point(500, 50)
+        pokemon6Box = Rectangle(pokemon6BoxBottomLeft, pokemon6BoxTopRight)
+        pokemon6Box.setFill(pokemonColorList[5])
+        pokemon6Box.setWidth(6)
+        pokemon6Box.draw(self.win)
+        
+        pokemon6Text = Text(Point(375,25), self.pokemonList[5].pokemonName + " " + str(self.pokemonList[5].currentHp) + "/" + str(self.pokemonList[5].Stats["HP"]))
+        pokemon6Text.setSize(10)
+        pokemon6Text.draw(self.win)
+        
+        clickedPoint = self.win.getMouse()
+        
+        while not Clicked(self.textBoxBottomLeft, self.textBoxTopRight, clickedPoint):
+            clickedPoint = self.win.getMouse()
+        
+        pokemon1Box.undraw()
+        pokemon1Text.undraw()
+        pokemon2Box.undraw()
+        pokemon2Text.undraw()
+        pokemon3Box.undraw()
+        pokemon3Text.undraw()
+        pokemon4Box.undraw()
+        pokemon4Text.undraw()
+        pokemon5Box.undraw()
+        pokemon5Text.undraw()
+        pokemon6Box.undraw()
+        pokemon6Text.undraw()
+        
+        if Clicked(pokemon1BoxBottomLeft, pokemon1BoxTopRight, clickedPoint):
+            if self.pokemonList[0].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "1"
+        elif Clicked(pokemon2BoxBottomLeft, pokemon2BoxTopRight, clickedPoint):
+            if self.pokemonList[1].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "2"
+        elif Clicked(pokemon3BoxBottomLeft, pokemon3BoxTopRight, clickedPoint):
+            if self.pokemonList[2].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "3"
+        elif Clicked(pokemon4BoxBottomLeft, pokemon4BoxTopRight, clickedPoint):
+            if self.pokemonList[3].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "4"
+        elif Clicked(pokemon5BoxBottomLeft, pokemon5BoxTopRight, clickedPoint):
+            if self.pokemonList[4].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "5"
+        elif Clicked(pokemon6BoxBottomLeft, pokemon6BoxTopRight, clickedPoint):
+            if self.pokemonList[5].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                position = "6"
+        
+        return position
          
 class Battle():
     
-    def __init__(self, Team1, Team2):
+    def __init__(self, Team1, Team2, win):
+        self.win = win
+        
         self.team1 = Team1
         self.team2 = Team2
         self.weather = ["Clear", 0]
         self.terrain = ["Clear", 0]
         self.lastMove = [None, None]
+        
+        self.team1.addToWin(self.win)
+        self.team2.addToWin(self.win)
+        
+        self.textBoxBottomLeft = Point(3,3)
+        self.textBoxTopRight = Point(497, 147)
+        self.textBox = Rectangle(self.textBoxBottomLeft, self.textBoxTopRight)
+        self.textBox.setWidth(6)
+        self.textBox.draw(self.win)
+        
+        self.pokemon1HPBar = Rectangle(Point(277, 172), Point(411, 188))
+        self.pokemon1HPBar.setFill("Grey")
+        self.pokemon1HPBar.setWidth(0)
+        self.pokemon1HPBar.draw(self.win)
+        self.pokemon2HPBar = Rectangle(Point(61, 362), Point(195, 378))
+        self.pokemon2HPBar.setFill("Grey")
+        self.pokemon2HPBar.setWidth(0)
+        self.pokemon2HPBar.draw(self.win)
+        
+        self.pokemon1Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon2Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon1Name = Text(Point(0,0), "")
+        self.pokemon2Name = Text(Point(0,0), "")
+        self.pokemon1CurrentHP = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon2CurrentHP = Rectangle(Point(0,0), Point(0,0))
+        self.HPText = Text(Point(0,0), "")
+        self.statusBar1 = Rectangle(Point(0,0), Point(0,0))
+        self.statusBar2 = Rectangle(Point(0,0), Point(0,0))
+        self.statusText1 = Text(Point(0,0), "")
+        self.statusText2 = Text(Point(0,0), "")
+        self.pokemon1GenderCircle = Circle(Point(0,0), 0)
+        self.pokemon2GenderCircle = Circle(Point(0,0), 0)
+        
+    def drawCurrentText(self, text):
+        self.currentText = Text(Point(250,75), text)
+        self.currentText.draw(self.win)
+        self.win.getMouse()
+        self.currentText.undraw()
+        
+    def healthBar(self):
+        self.pokemon1CurrentHP.undraw()
+        self.pokemon2CurrentHP.undraw()
+        self.HPText.undraw()
+        self.statusBar1.undraw()
+        self.statusBar2.undraw()
+        self.statusText1.undraw()
+        self.statusText2.undraw()
+        
+        if self.team1.activePokemon.currentHp == self.team1.activePokemon.Stats["HP"]:
+            currentHPValue = 16
+        elif self.team1.activePokemon.currentHp <= self.team1.activePokemon.Stats["HP"] / 16:
+            currentHPValue = .5
+        else:
+            currentHPValue = floor(self.team1.activePokemon.currentHp / self.team1.activePokemon.Stats["HP"] * 16)
+            
+        self.pokemon1CurrentHP = Rectangle(Point(280, 175), Point(280 + currentHPValue * 8, 185))
+        if currentHPValue >= 8:
+            self.pokemon1CurrentHP.setFill("Green")
+        elif currentHPValue <= .5:
+            self.pokemon1CurrentHP.setFill("Red")
+        else:
+            self.pokemon1CurrentHP.setFill("Yellow")
+        self.pokemon1CurrentHP.setWidth(0)
+        self.pokemon1CurrentHP.draw(self.win)
+        
+        if self.team2.activePokemon.currentHp == self.team2.activePokemon.Stats["HP"]:
+            currentHPValue = 16
+        elif self.team2.activePokemon.currentHp <= self.team2.activePokemon.Stats["HP"] / 16:
+            currentHPValue = .5
+        else:
+            currentHPValue = floor(self.team2.activePokemon.currentHp / self.team2.activePokemon.Stats["HP"] * 16)
+            
+        self.pokemon2CurrentHP = Rectangle(Point(64, 365), Point(64 + currentHPValue * 8, 375))
+        if currentHPValue >= 8:
+            self.pokemon2CurrentHP.setFill("Green")
+        elif currentHPValue <= .5:
+            self.pokemon2CurrentHP.setFill("Red")
+        else:
+            self.pokemon2CurrentHP.setFill("Yellow")
+        self.pokemon2CurrentHP.setWidth(0)
+        self.pokemon2CurrentHP.draw(self.win)
+        
+        self.HPText = Text(Point(450, 180), str(self.team1.activePokemon.currentHp) + "/" + str(self.team1.activePokemon.Stats["HP"]))
+        self.HPText.draw(self.win)
+        
+        if not self.team1.activePokemon.status == "Healthy":
+            if self.team1.activePokemon.status in ["Sleep","Rest"]:
+                statusText1 = "SLP"
+                statusColor1 = [152,169,245]
+            elif self.team1.activePokemon.status == "Poison":
+                statusText1 = "PSN"
+                if self.team1.activePokemon.volatile["Badly Poison"] > 0:
+                    statusColor1 = [90, 30, 92]
+                else:
+                    statusColor1 = [115,38,117]
+            elif self.team1.activePokemon.status == "Burn":
+                statusText1 = "BRN"
+                statusColor1 = [217,48,6]
+            elif self.team1.activePokemon.status == "Paralyze":
+                statusText1 = "PRZ"
+                statusColor1 = [252,188,12]
+            elif self.team1.activePokemon.status == "Frozen":
+                statusText1 = "FRZ"
+                statusColor1 = [173,234,254]
+            self.statusBar1 = Rectangle(Point(241,172), Point(271,188))
+            self.statusBar1.setFill(color_rgb(statusColor1[0], statusColor1[1], statusColor1[2]))
+            self.statusBar1.setWidth(2)
+            self.statusBar1.draw(self.win)
+            
+            self.statusText1 = Text(Point(256,180), statusText1)
+            self.statusText1.setSize(10)
+            self.statusText1.draw(self.win)
+            
+        if not self.team2.activePokemon.status == "Healthy":
+            if self.team2.activePokemon.status in ["Sleep","Rest"]:
+                statusText2 = "SLP"
+                statusColor2 = [152,169,245]
+            elif self.team2.activePokemon.status == "Poison":
+                statusText2 = "PSN"
+                if self.team2.activePokemon.volatile["Badly Poison"] > 0:
+                    statusColor2 = [90, 30, 92]
+                else:
+                    statusColor2 = [115,38,117]
+            elif self.team2.activePokemon.status == "Burn":
+                statusText2 = "BRN"
+                statusColor2 = [217,48,6]
+            elif self.team2.activePokemon.status == "Paralyze":
+                statusText2 = "PRZ"
+                statusColor2 = [252,188,12]
+            elif self.team2.activePokemon.status == "Frozen":
+                statusText2 = "FRZ"
+                statusColor2 = [173,234,254]
+            self.statusBar2 = Rectangle(Point(25,362), Point(55,378))
+            self.statusBar2.setFill(color_rgb(statusColor2[0], statusColor2[1], statusColor2[2]))
+            self.statusBar2.setWidth(2)
+            self.statusBar2.draw(self.win)
+            
+            self.statusText2 = Text(Point(40,370), statusText2)
+            self.statusText2.setSize(10)
+            self.statusText2.draw(self.win)
+        
+    def mainMenu(self):
+        informationBoxBottomLeft = Point(0,0)
+        informationBoxTopRight = Point(500/3, 150)
+        informationBox = Rectangle(informationBoxBottomLeft, informationBoxTopRight)
+        informationBox.setWidth(6)
+        informationBox.setFill("White")
+        informationBox.draw(self.win)
+        informationString = "Item: " + str(self.team1.activePokemon.item) + "\nAbility: " + str(self.team1.activePokemon.ability.abilityName) + "\nWeather: " + str(self.weather[0]) + "\nTerrain: " + str(self.terrain[0])
+        informationText = Text(Point(250/3, 75), informationString)
+        informationText.setSize(11)
+        informationText.draw(self.win)
+        
+        attackBottomLeft = Point(500/3, 75)
+        attackTopRight = Point(1000/3, 150)
+        attackBox = Rectangle(attackBottomLeft, attackTopRight)
+        attackBox.setWidth(6)
+        attackBox.setFill("Red")
+        attackBox.draw(self.win)
+        attackText = Text(Point(250, 112.5), "Attack")
+        attackText.setSize(25)
+        attackText.draw(self.win)
+        
+        switchBottomLeft = Point(1000/3, 75)
+        switchTopRight = Point(500, 150)
+        switchBox = Rectangle(switchBottomLeft, switchTopRight)
+        switchBox.setWidth(6)
+        switchBox.setFill("Green")
+        switchBox.draw(self.win)
+        switchText = Text(Point(1250/3, 112.5), "Switch")
+        switchText.setSize(25)
+        switchText.draw(self.win)
+        
+        forfeitBottomLeft = Point(500/3, 0)
+        forfeitTopRight = Point(500, 75)
+        forfeitBox = Rectangle(forfeitBottomLeft, forfeitTopRight)
+        forfeitBox.setWidth(6)
+        forfeitBox.setFill("Blue")
+        forfeitBox.draw(self.win)
+        forfeitText = Text(Point(1000/3, 37.5), "Forfeit")
+        forfeitText.setSize(25)
+        forfeitText.draw(self.win)
+        
+        clickedPoint = self.win.getMouse()
+        
+        while not Clicked(self.textBoxBottomLeft, self.textBoxTopRight, clickedPoint):
+            clickedPoint = self.win.getMouse()
+        
+        attackBox.undraw()
+        switchBox.undraw()
+        forfeitBox.undraw()
+        informationBox.undraw()
+        attackText.undraw()
+        switchText.undraw()
+        forfeitText.undraw()
+        informationText.undraw()
+        
+        if Clicked(attackBottomLeft, attackTopRight, clickedPoint):
+            return self.attackMenu()
+        elif Clicked(switchBottomLeft, switchTopRight, clickedPoint):
+            return self.switchMenu()
+        elif Clicked(informationBoxBottomLeft, informationBoxTopRight, clickedPoint):
+            return self.mainMenu()
+        else:
+            self.forfeitMenu()
+            return ["forfeit", 1]
+        
+    def attackMenu(self):
+        typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
+                         "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
+                         "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
+                         "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
+                         "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
+                         "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
+        
+        attack1BottomLeft = Point(0,100)
+        attack1TopRight = Point(250,150)
+        attack1Box = Rectangle(attack1BottomLeft, attack1TopRight)
+        attack1Box.setWidth(6)
+        attack1Box.setFill(color_rgb(typeColorDict[self.team1.activePokemon.Moves[0].moveType.typeName][0],
+                                     typeColorDict[self.team1.activePokemon.Moves[0].moveType.typeName][1],
+                                     typeColorDict[self.team1.activePokemon.Moves[0].moveType.typeName][2]))
+        attack1Box.draw(self.win)
+        
+        attack1String = self.team1.activePokemon.Moves[0].moveName + " " + str(self.team1.activePokemon.Moves[0].currentPP) + "/" + str(self.team1.activePokemon.Moves[0].pp)
+        attack1Text = Text(Point(125,125), attack1String)
+        if len(attack1String) > 20:
+            attack1Text.setSize(10)
+        if self.team1.activePokemon.Moves[0].moveType.typeName in ["Dark", "Fighting", "Ghost"]:
+            attack1Text.setFill("White")
+        attack1Text.draw(self.win)
+        
+        attack2BottomLeft = Point(250,100)
+        attack2TopRight = Point(500,150)
+        attack2Box = Rectangle(attack2BottomLeft, attack2TopRight)
+        attack2Box.setWidth(6)
+        attack2Box.setFill(color_rgb(typeColorDict[self.team1.activePokemon.Moves[1].moveType.typeName][0],
+                                     typeColorDict[self.team1.activePokemon.Moves[1].moveType.typeName][1],
+                                     typeColorDict[self.team1.activePokemon.Moves[1].moveType.typeName][2]))
+        attack2Box.draw(self.win)
+        
+        attack2String = self.team1.activePokemon.Moves[1].moveName + " " + str(self.team1.activePokemon.Moves[1].currentPP) + "/" + str(self.team1.activePokemon.Moves[1].pp)
+        attack2Text = Text(Point(375,125), attack2String)
+        if len(attack2String) > 20:
+            attack2Text.setSize(10)
+        if self.team1.activePokemon.Moves[1].moveType.typeName in ["Dark", "Fighting", "Ghost"]:
+            attack2Text.setFill("White")
+        attack2Text.draw(self.win)
+        
+        attack3BottomLeft = Point(0,50)
+        attack3TopRight = Point(250,100)
+        attack3Box = Rectangle(attack3BottomLeft, attack3TopRight)
+        attack3Box.setWidth(6)
+        attack3Box.setFill(color_rgb(typeColorDict[self.team1.activePokemon.Moves[2].moveType.typeName][0],
+                                     typeColorDict[self.team1.activePokemon.Moves[2].moveType.typeName][1],
+                                     typeColorDict[self.team1.activePokemon.Moves[2].moveType.typeName][2]))
+        attack3Box.draw(self.win)
+        
+        attack3String = self.team1.activePokemon.Moves[2].moveName + " " + str(self.team1.activePokemon.Moves[2].currentPP) + "/" + str(self.team1.activePokemon.Moves[2].pp)
+        attack3Text = Text(Point(125,75), attack3String)
+        if len(attack3String) > 20:
+            attack3Text.setSize(10)
+        if self.team1.activePokemon.Moves[2].moveType.typeName in ["Dark", "Fighting", "Ghost"]:
+            attack3Text.setFill("White")
+        attack3Text.draw(self.win)
+        
+        attack4BottomLeft = Point(250,50)
+        attack4TopRight = Point(500,100)
+        attack4Box = Rectangle(attack4BottomLeft, attack4TopRight)
+        attack4Box.setWidth(6)
+        attack4Box.setFill(color_rgb(typeColorDict[self.team1.activePokemon.Moves[3].moveType.typeName][0],
+                                     typeColorDict[self.team1.activePokemon.Moves[3].moveType.typeName][1],
+                                     typeColorDict[self.team1.activePokemon.Moves[3].moveType.typeName][2]))
+        attack4Box.draw(self.win)
+        
+        attack4String = self.team1.activePokemon.Moves[3].moveName + " " + str(self.team1.activePokemon.Moves[3].currentPP) + "/" + str(self.team1.activePokemon.Moves[3].pp)
+        attack4Text = Text(Point(375,75), attack4String)
+        if len(attack4String) > 20:
+            attack4Text.setSize(10)
+        if self.team1.activePokemon.Moves[3].moveType.typeName in ["Dark", "Fighting", "Ghost"]:
+            attack4Text.setFill("White")
+        attack4Text.draw(self.win)
+        
+        backBoxBottomLeft = Point(0,0)
+        backBoxTopRight = Point(500,50)
+        backBox = Rectangle(backBoxBottomLeft, backBoxTopRight)
+        backBox.setWidth(6)
+        backBox.setFill("Blue")
+        backBox.draw(self.win)
+        backText = Text(Point(250, 25), "Back")
+        backText.draw(self.win)
+        
+        clickedPoint = self.win.getMouse()
+        
+        while not Clicked(self.textBoxBottomLeft, self.textBoxTopRight, clickedPoint):
+            clickedPoint = self.win.getMouse()
+        
+        attack1Box.undraw()
+        attack2Box.undraw()
+        attack3Box.undraw()
+        attack4Box.undraw()
+        attack1Text.undraw()
+        attack2Text.undraw()
+        attack3Text.undraw()
+        attack4Text.undraw()
+        backBox.undraw()
+        backText.undraw()
+        
+        if Clicked(backBoxBottomLeft, backBoxTopRight, clickedPoint):
+            return self.mainMenu()
+        
+        for move in range(5):
+            if not (self.team1.activePokemon.Moves[move].currentPP <= 0 or (move + 1) in self.team1.activePokemon.volatile["Blocked Moves"]):
+                break
+            if move == 5:
+                return ["attack", 5]
+        
+        if Clicked(attack1BottomLeft, attack1TopRight, clickedPoint):
+            if self.team1.activePokemon.Moves[0].currentPP <= 0 or 1 in self.team1.activePokemon.volatile["Blocked Moves"]:
+                return self.attackMenu()
+            else:
+                return ["attack", 1]
+        elif Clicked(attack2BottomLeft, attack2TopRight, clickedPoint):
+            if self.team1.activePokemon.Moves[1].currentPP <= 0 or 2 in self.team1.activePokemon.volatile["Blocked Moves"]:
+                return self.attackMenu()
+            else:
+                return ["attack", 2]
+        elif Clicked(attack3BottomLeft, attack3TopRight, clickedPoint):
+            if self.team1.activePokemon.Moves[2].currentPP <= 0 or 3 in self.team1.activePokemon.volatile["Blocked Moves"]:
+                return self.attackMenu()
+            else:
+                return ["attack", 3]
+        else:
+            if self.team1.activePokemon.Moves[3].currentPP <= 0 or 4 in self.team1.activePokemon.volatile["Blocked Moves"]:
+                return self.attackMenu()
+            else:
+                return ["attack", 4]
+    
+    def switchMenu(self):
+        pokemonColorList = []
+        for pokemon in self.team1.pokemonList:
+            if pokemon == self.team1.activePokemon:
+                pokemonColorList.append("White")
+            elif pokemon.currentHp >= pokemon.Stats["HP"] * .5:
+                pokemonColorList.append("Green")
+            elif pokemon.currentHp >= pokemon.Stats["HP"] * .125:
+                pokemonColorList.append("Yellow")
+            elif pokemon.currentHp <= 0:
+                pokemonColorList.append("Grey")
+            else:
+                pokemonColorList.append("Red")
+                
+        pokemon1BoxBottomLeft = Point(0, 112.5)
+        pokemon1BoxTopRight = Point(250, 150)
+        pokemon1Box = Rectangle(pokemon1BoxBottomLeft, pokemon1BoxTopRight)
+        pokemon1Box.setFill(pokemonColorList[0])
+        pokemon1Box.setWidth(6)
+        pokemon1Box.draw(self.win)
+        
+        pokemon1Text = Text(Point(125,131.25), self.team1.pokemonList[0].pokemonName + " " + str(self.team1.pokemonList[0].currentHp) + "/" + str(self.team1.pokemonList[0].Stats["HP"]))
+        pokemon1Text.setSize(10)
+        pokemon1Text.draw(self.win)
+        
+        pokemon2BoxBottomLeft = Point(250, 112.5)
+        pokemon2BoxTopRight = Point(500, 150)
+        pokemon2Box = Rectangle(pokemon2BoxBottomLeft, pokemon2BoxTopRight)
+        pokemon2Box.setFill(pokemonColorList[1])
+        pokemon2Box.setWidth(6)
+        pokemon2Box.draw(self.win)
+        
+        pokemon2Text = Text(Point(375,131.25), self.team1.pokemonList[1].pokemonName + " " + str(self.team1.pokemonList[1].currentHp) + "/" + str(self.team1.pokemonList[1].Stats["HP"]))
+        pokemon2Text.setSize(10)
+        pokemon2Text.draw(self.win)
+        
+        pokemon3BoxBottomLeft = Point(0, 75)
+        pokemon3BoxTopRight = Point(250, 112.5)
+        pokemon3Box = Rectangle(pokemon3BoxBottomLeft, pokemon3BoxTopRight)
+        pokemon3Box.setFill(pokemonColorList[2])
+        pokemon3Box.setWidth(6)
+        pokemon3Box.draw(self.win)
+        
+        pokemon3Text = Text(Point(125,93.75), self.team1.pokemonList[2].pokemonName + " " + str(self.team1.pokemonList[2].currentHp) + "/" + str(self.team1.pokemonList[2].Stats["HP"]))
+        pokemon3Text.setSize(10)
+        pokemon3Text.draw(self.win)
+        
+        pokemon4BoxBottomLeft = Point(250, 75)
+        pokemon4BoxTopRight = Point(500, 112.5)
+        pokemon4Box = Rectangle(pokemon4BoxBottomLeft, pokemon4BoxTopRight)
+        pokemon4Box.setFill(pokemonColorList[3])
+        pokemon4Box.setWidth(6)
+        pokemon4Box.draw(self.win)
+        
+        pokemon4Text = Text(Point(375,93.75), self.team1.pokemonList[3].pokemonName + " " + str(self.team1.pokemonList[3].currentHp) + "/" + str(self.team1.pokemonList[3].Stats["HP"]))
+        pokemon4Text.setSize(10)
+        pokemon4Text.draw(self.win)
+        
+        pokemon5BoxBottomLeft = Point(0, 37.5)
+        pokemon5BoxTopRight = Point(250, 75)
+        pokemon5Box = Rectangle(pokemon5BoxBottomLeft, pokemon5BoxTopRight)
+        pokemon5Box.setFill(pokemonColorList[4])
+        pokemon5Box.setWidth(6)
+        pokemon5Box.draw(self.win)
+        
+        pokemon5Text = Text(Point(125,56.25), self.team1.pokemonList[4].pokemonName + " " + str(self.team1.pokemonList[4].currentHp) + "/" + str(self.team1.pokemonList[4].Stats["HP"]))
+        pokemon5Text.setSize(10)
+        pokemon5Text.draw(self.win)
+        
+        pokemon6BoxBottomLeft = Point(250, 37.5)
+        pokemon6BoxTopRight = Point(500, 75)
+        pokemon6Box = Rectangle(pokemon6BoxBottomLeft, pokemon6BoxTopRight)
+        pokemon6Box.setFill(pokemonColorList[5])
+        pokemon6Box.setWidth(6)
+        pokemon6Box.draw(self.win)
+        
+        pokemon6Text = Text(Point(375,56.25), self.team1.pokemonList[5].pokemonName + " " + str(self.team1.pokemonList[5].currentHp) + "/" + str(self.team1.pokemonList[5].Stats["HP"]))
+        pokemon6Text.setSize(10)
+        pokemon6Text.draw(self.win)
+        
+        backBoxBottomLeft = Point(0,0)
+        backBoxTopRight = Point(500, 37.5)
+        backBox = Rectangle(backBoxBottomLeft, backBoxTopRight)
+        backBox.setFill("Blue")
+        backBox.setWidth(6)
+        backBox.draw(self.win)
+        
+        backBoxText = Text(Point(250, 18.75), "Back")
+        backBoxText.draw(self.win)
+        
+        clickedPoint = self.win.getMouse()
+        
+        while not Clicked(self.textBoxBottomLeft, self.textBoxTopRight, clickedPoint):
+            clickedPoint = self.win.getMouse()
+        
+        pokemon1Box.undraw()
+        pokemon1Text.undraw()
+        pokemon2Box.undraw()
+        pokemon2Text.undraw()
+        pokemon3Box.undraw()
+        pokemon3Text.undraw()
+        pokemon4Box.undraw()
+        pokemon4Text.undraw()
+        pokemon5Box.undraw()
+        pokemon5Text.undraw()
+        pokemon6Box.undraw()
+        pokemon6Text.undraw()
+        backBox.undraw()
+        backBoxText.undraw()
+        
+        if Clicked(backBoxBottomLeft, backBoxTopRight, clickedPoint):
+            return self.mainMenu()
+        elif Clicked(pokemon1BoxBottomLeft, pokemon1BoxTopRight, clickedPoint):
+            if self.team1.pokemonList[0].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 1]
+        elif Clicked(pokemon2BoxBottomLeft, pokemon2BoxTopRight, clickedPoint):
+            if self.team1.pokemonList[1].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 2]
+        elif Clicked(pokemon3BoxBottomLeft, pokemon3BoxTopRight, clickedPoint):
+            if self.team1.pokemonList[2].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 3]
+        elif Clicked(pokemon4BoxBottomLeft, pokemon4BoxTopRight, clickedPoint):
+            if self.team1.pokemonList[3].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 4]
+        elif Clicked(pokemon5BoxBottomLeft, pokemon5BoxTopRight, clickedPoint):
+            if self.team1.pokemonList[4].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 5]
+        else:
+            if self.team1.pokemonList[5].currentHp <= 0:
+                return self.switchMenu()
+            else:
+                return ["switch", 6]
+    
+    def forfeitMenu(self):
+        for pokemon in self.team1.pokemonList:
+            pokemon.currentHp = 0
+        
+        self.team1.alivePokemon = 0
+        self.team1.activePokemon.Moves[0].currentPP = 1
     
     def typeMatchup(self):
         typeNameList = ["Bug", "Dark", "Dragon", "Electric", "Fairy", "Fighting",
@@ -609,6 +1232,68 @@ class Battle():
                             move.moveType = Type
     
     def switchIn(self, pokemon1, pokemon2):
+        if self.team1.activePokemon == pokemon1:
+            self.pokemon1Picture.undraw()
+            self.pokemon1Name.undraw()
+            self.pokemon1CurrentHP.undraw()
+            self.pokemon1GenderCircle.undraw()
+            
+            self.pokemon1Picture = Rectangle(Point(25,160), Point(125,260))
+            self.pokemon1Picture.draw(self.win)
+            
+            pokemonName1List = self.team1.activePokemon.pokemonName.split(" ")
+            if pokemonName1List[0] == "Mega":
+                pokemon1Name = pokemonName1List[1]
+            elif pokemonName1List[0] == "Tapu":
+                pokemon1Name = pokemonName1List[0] + " " + pokemonName1List[1]
+            else:
+                pokemon1Name = pokemonName1List[0]
+            self.pokemon1Name = Text(Point(125 + 4 * len(pokemon1Name), 180), pokemon1Name)
+            self.pokemon1Name.setSize(10)
+            self.pokemon1Name.draw(self.win)
+            
+            if pokemon1.gender in ["Male", "Female"]:
+                self.pokemon1GenderCircle = Circle(Point(230, 180), 5)
+                self.pokemon1GenderCircle.setWidth(2)
+                if pokemon1.gender == "Male":
+                    self.pokemon1GenderCircle.setOutline("Blue")
+                else:
+                    self.pokemon1GenderCircle.setOutline("Pink")
+                self.pokemon1GenderCircle.draw(self.win)
+            
+            self.healthBar()
+            
+        else:
+            self.pokemon2Picture.undraw()
+            self.pokemon2Name.undraw()
+            self.pokemon2CurrentHP.undraw()
+            self.pokemon2GenderCircle.undraw()
+            
+            self.pokemon2Picture = Rectangle(Point(375,290), Point(475,390))
+            self.pokemon2Picture.draw(self.win)
+            
+            pokemonName2List = self.team2.activePokemon.pokemonName.split(" ")
+            if pokemonName2List[0] == "Mega":
+                pokemon2Name = pokemonName2List[1]
+            elif pokemonName2List[0] == "Tapu":
+                pokemon2Name = pokemonName2List[0] + " " + pokemonName2List[1]
+            else:
+                pokemon2Name = pokemonName2List[0]
+            self.pokemon2Name = Text(Point(375 - 4 * len(pokemon2Name), 370), pokemon2Name)
+            self.pokemon2Name.setSize(10)
+            self.pokemon2Name.draw(self.win)
+            
+            if pokemon1.gender in ["Male", "Female"]:
+                self.pokemon2GenderCircle = Circle(Point(14, 370), 5)
+                self.pokemon2GenderCircle.setWidth(2)
+                if pokemon1.gender == "Male":
+                    self.pokemon2GenderCircle.setOutline("Blue")
+                else:
+                    self.pokemon2GenderCircle.setOutline("Pink")
+                self.pokemon2GenderCircle.draw(self.win)
+            
+            self.healthBar()
+        
         pokemon2.volatile["Trap"] = 0
         pokemon2.volatile["Block Condition"] = "None"
         pokemon2.volatile["Infatuation"] = 0
@@ -616,7 +1301,7 @@ class Battle():
             if pokemon1.ability == "Klutz":
                 pokemon1.item.consumed = False
             pokemon2.ability.neutralize()
-            print("Neutralizing gas filled the area!")
+            self.drawCurrentText("Neutralizing gas filled the area!")
         elif pokemon2.ability.abilityName == "Neutralizing Gas" and not (pokemon1.ability.abilityName == "Neutralizing Gas"):
             if pokemon2.ability == "Klutz":
                 pokemon2.item.consumed = False
@@ -638,13 +1323,13 @@ class Battle():
                         else:
                             self.weather = [pokemon1.ability.effect[1], 5]
                         if self.weather[0] == "Rain Dance":
-                            print("It started to rain!")
+                            self.drawCurrentText("It started to rain!")
                         elif self.weather[0] == "Sunny Day":
-                            print("The sunlight turned harsh!")
+                            self.drawCurrentText("The sunlight turned harsh!")
                         elif self.weather[0] == "Hail":
-                            print("It started to hail!")
+                            self.drawCurrentText("It started to hail!")
                         elif self.weather[0] == "Sandstorm":
-                            print("A sandstorm kicked up!")
+                            self.drawCurrentText("A sandstorm kicked up!")
                 elif pokemon1.ability.effect[1] == "Screens":
                     self.team1.reflect = 0
                     self.team1.lightScreen = 0
@@ -656,7 +1341,7 @@ class Battle():
                             self.terrain = [pokemon1.ability.effect[1], 8]
                         else:
                             self.terrain = [pokemon1.ability.effect[1], 5]
-                        print(pokemon1.pokemonName + " created a " + pokemon1.ability.abilityName + "!")
+                        self.drawCurrentText(pokemon1.pokemonName + " created a " + pokemon1.ability.abilityName + "!")
                 elif pokemon1.ability.effect[1] == "Boost":
                     if pokemon2.Stats["Defense"] * pokemon2.statModifier["Defense"] <= pokemon2.Stats["Special Defense"] * pokemon2.statModifier["Special Defense"]:
                         pokemon1.modifyStat("Special Attack", "1")
@@ -666,7 +1351,7 @@ class Battle():
                     strongestMove = 0
                     strongestPosition = 0
                     for moveNumber in range(4):
-                        if pokemon2.Moves[moveNumber].Stat in ["Level Damage", "Set Damage"] or pokemon2.Moves[moveNumber].moveName in ["Electro Ball", "Flail", "Fling", "Gyro Ball", "Reversal", "Trump Card"]:
+                        if pokemon2.Moves[moveNumber].stat in ["Level Damage", "Set Damage"] or pokemon2.Moves[moveNumber].moveName in ["Electro Ball", "Flail", "Fling", "Gyro Ball", "Reversal", "Trump Card"]:
                             power = 80
                         else:
                             power = pokemon2.Moves[moveNumber].power
@@ -676,7 +1361,7 @@ class Battle():
                         elif strongestMove == power and randint(0,1) == 1:
                             strongestMove = power
                             strongestPosition = moveNumber
-                    print(pokemon1.pokemonName + " was warned about " + pokemon2.Moves[strongestPosition].moveName + "!")
+                    self.drawCurrentText(pokemon1.pokemonName + " was warned about " + pokemon2.Moves[strongestPosition].moveName + "!")
                 elif pokemon1.ability.abilityName == "Trace":
                     pokemon1.ability.tempAbility = [pokemon1.ability.abilityName, pokemon1.ability.target,
                                                     pokemon1.ability.effect, pokemon1.ability.success]
@@ -685,15 +1370,15 @@ class Battle():
                     pokemon1.ability.effect = pokemon2.ability.effect
                     pokemon1.ability.success = pokemon2.ability.success
                     pokemon1.ability.trace = True
-                    print(pokemon1.pokemonName + " traced " + pokemon1.ability.abilityName + "!")
+                    self.drawCurrentText(pokemon1.pokemonName + " traced " + pokemon1.ability.abilityName + "!")
                     self.switchIn(pokemon1, pokemon2)
                         
             elif pokemon1.ability.effect[0] == "Mold Breaker":
-                print(pokemon1.pokemonName + " breaks the mold!")
+                self.drawCurrentText(pokemon1.pokemonName + " breaks the mold!")
             elif pokemon1.ability.abilityName == "Pressure":
-                print(pokemon1.pokemonName + " is exerting its pressure!")
+                self.drawCurrentText(pokemon1.pokemonName + " is exerting its pressure!")
             elif pokemon1.ability.abilityName == "Unnerve":
-                print(pokemon2.pokemonName + " is too nervous to eat berries!")
+                self.drawCurrentText(pokemon2.pokemonName + " is too nervous to eat berries!")
             elif pokemon1.ability.effect[0] == "Trapping" and not (pokemon2.Type1.typeName == "Ghost" or pokemon2.Type2.typeName == "Ghost"):
                 if pokemon1.ability.effect[1] == "Steel" and (pokemon2.Type1.typeName == "Steel" or pokemon2.Type2.typeName == "Steel"):
                     pokemon2.volatile["Block Condition"] = "Mean Look"
@@ -770,6 +1455,9 @@ class Battle():
         elif pokemon1.ability.abilityName == "Defeatist" and pokemon1.currentHp <= pokemon1.Stats["HP"] * (1/2):
             moveType = pokemon1.Moves[moveNumber].moveType
             abilityBoost = .5
+        elif pokemon1.ability.abilityName == "Sheer Force"  and not pokemon1.Moves[moveNumber].phySpe == "Status" and (pokemon1.Moves[moveNumber].target == "Opponent" or not "-" in pokemon1.Moves[moveNumber].stages):
+            moveType = pokemon1.Moves[moveNumber].moveType
+            abilityBoost = 1.3
         else:
             moveType = pokemon1.Moves[moveNumber].moveType
             abilityBoost = 1
@@ -855,7 +1543,7 @@ class Battle():
                 if moveType.typeName in pokemon2.item.effect and pokemon2.item.secondEffect == "Defend" and typeEffect > 1 and not pokemon2.item.consumed and not pokemon1.ability.abilityName == "Unnerve":
                     pokemon2.item.Consume()
                     itemMult *= pokemon2.item.multiplier
-                    print(pokemon2.pokemonName + " lessened the damage with its " + pokemon2.item.itemName + "!")
+                    self.drawCurrentText(pokemon2.pokemonName + " lessened the damage with its " + pokemon2.item.itemName + "!")
                 elif "Defense" in pokemon2.item.effect and not pokemon2.item.consumed:
                     itemMult /= pokemon2.item.multiplier
                 if pokemon1.Moves[moveNumber].moveName == "Knock Off" and not pokemon2.item.consumed and not pokemon2.item.fling == 0:
@@ -1042,7 +1730,7 @@ class Battle():
                                  "Water Pulse"] and pokemon1.ability.abilityName == "Mega Launcher":
                     abilityBoost *= 1.5
                 if pokemon1.ability.effect[2] == "Weather" and pokemon1.ability.effect[0] == "Boost":
-                    if pokemon1.abilty.effect[1] == self.weather[0]:
+                    if pokemon1.ability.effect[1] == self.weather[0]:
                         if self.weather[0] == "Sandstorm" and moveType.moveName in ["Ground", "Rock", "Steel"]:
                             abilityBoost *= 1.3
                         elif self.weather[0] == "Sunny Day":
@@ -1099,13 +1787,18 @@ class Battle():
             pokemon2 = self.team1.activePokemon
             defendingTeam = self.team1
             attackingTeam = self.team2
-            self.lastMove[1] = pokemon2.Moves[moveNumber - 1].moveName
+            self.lastMove[1] = pokemon1.Moves[moveNumber - 1].moveName
         damage, typeEffect = self.damageCalc(moveNumber, playerNum)
         
         if damage == 0 and pokemon1.Moves[moveNumber - 1].power > 0:
             hit = 0
         elif pokemon2.intangibility:
             hit = 0
+        elif (pokemon2.ability.abilityName == "Magic Bounce" or (self.lastMove[2 - playerNum] == "Magic Coat" and priority2 == 4)) and not pokemon1.ability.abilityName == "Magic Bounce" and pokemon1.Moves[moveNumber - 1].phySpe == "Status" and pokemon1.Moves[moveNumber - 1].target == "Opponent":
+            hit = 141
+            pokemon2.Moves[5] = copy.deepcopy(pokemon1.Moves[moveNumber - 1])
+            pokemon2.Moves[5].currentPP = 1
+            self.Attack(6, priority2, priority1, 3 - playerNum, computer2, computer)
         elif pokemon1.ability.abilityName == "No Guard" or pokemon2.ability.abilityName == "No Guard":
             hit = -1
         elif self.weather[0] == "Hail" and pokemon1.Moves[moveNumber - 1].moveName == "Blizzard":
@@ -1135,7 +1828,7 @@ class Battle():
             if pokemon1.recharge == 1:
                 beatStatus = False
                 pokemon1.recharge = 0
-                print(pokemon1.pokemonName + " must recharge!")
+                self.drawCurrentText(pokemon1.pokemonName + " must recharge!")
             elif pokemon1.status == "Freeze":
                 unthaw = randint(1, 5)
                 if pokemon1.Moves[moveNumber - 1].moveName in ["Flame Wheel",
@@ -1143,19 +1836,19 @@ class Battle():
                                  "Steam Eruption", "Burn Up", "Pyro Ball",
                                  "Scorching Sands"] or self.weather[0] == "Sunny Day":
                     pokemon1.changeStatus("Healthy")
-                    print(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber -1].moveName +
+                    self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber -1].moveName +
                           " and thawed itself out!")
                 elif unthaw != 1:
                     beatStatus = False
-                    print(pokemon1.pokemonName + " is frozen solid!")
+                    self.drawCurrentText(pokemon1.pokemonName + " is frozen solid!")
                 else:
                     pokemon1.changeStatus("Healthy")
-                    print(pokemon1.pokemonName + " thawed out!")
+                    self.drawCurrentText(pokemon1.pokemonName + " thawed out!")
             elif pokemon1.status == "Paralyze":
                 fullyPara = randint(1, 4)
                 if fullyPara == 1:
                     beatStatus = False
-                    print(pokemon1.pokemonName + " is fully paralyzed!")
+                    self.drawCurrentText(pokemon1.pokemonName + " is fully paralyzed!")
             elif pokemon1.status == "Sleep":
                 if self.terrain[0] == "Electric Terrain" and not (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
                     pokemon1.sleepCounter == 6
@@ -1165,32 +1858,32 @@ class Battle():
                         pokemon1.sleepCounter = 2
                     else:
                         pokemon1.sleepCounter = 1
-                    print(pokemon1.pokemonName + " is fast asleep!")
+                    self.drawCurrentText(pokemon1.pokemonName + " is fast asleep!")
                 else:
                     wakeUp = randint(1, (7 - pokemon1.sleepCounter))
                     if wakeUp == 1:
                         pokemon1.changeStatus("Healthy")
-                        print(pokemon1.pokemonName + " woke up!")
+                        self.drawCurrentText(pokemon1.pokemonName + " woke up!")
                     else:
                         beatStatus = False
                         if pokemon1.ability.abilityName == "Early Bird" and not pokemon1.sleepCounter == 5:
                             pokemon1.sleepCounter += 2
                         else:
                             pokemon1.sleepCounter += 1
-                        print(pokemon1.pokemonName + " is fast asleep!")
+                        self.drawCurrentText(pokemon1.pokemonName + " is fast asleep!")
             elif pokemon1.status == "Rest":
                 if self.terrain[0] == "Electric Terrain" and not (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
                     pokemon1.sleepCounter == 2
                 if pokemon1.sleepCounter == 2:
                     pokemon1.changeStatus("Healthy")
-                    print(pokemon1.pokemonName + " woke up!")
+                    self.drawCurrentText(pokemon1.pokemonName + " woke up!")
                 else:
                     beatStatus = False
                     if pokemon1.ability.abilityName == "Early Bird":
                         pokemon1.sleepCounter += 2
                     else:
                         pokemon1.sleepCounter += 1
-                    print(pokemon1.pokemonName + " is fast asleep!")
+                    self.drawCurrentText(pokemon1.pokemonName + " is fast asleep!")
             
             weatherSpeed = 1
             terrainSpeed = 1
@@ -1210,31 +1903,33 @@ class Battle():
                 if pokemon1.volatile["Flinch"] == 1:
                     if pokemon1.Stats["Speed"] * pokemon1.statModifier["Speed"] * weatherSpeed * terrainSpeed < pokemon2.Stats["Speed"] * pokemon2.statModifier["Speed"] or priority1 < priority2:
                         beatStatus = False
-                        print(pokemon1.pokemonName + " flinched!")
+                        self.drawCurrentText(pokemon1.pokemonName + " flinched!")
                         pokemon1.recharge = 0
+                        if pokemon1.ability.abilityName == "Steadfast":
+                            pokemon1.modifyStat("Speed", 1)
                     pokemon1.volatile["Flinch"] = 0
                 if pokemon1.volatile["Infatuation"] > 0 and beatStatus:
-                    print(pokemon1.pokemonName + " is in love with " + pokemon2.pokemonName + "!")
+                    self.drawCurrentText(pokemon1.pokemonName + " is in love with " + pokemon2.pokemonName + "!")
                     beatAttract = randint(0, 1)
                     if beatAttract == 0:
                         beatStatus = False
-                        print(pokemon1.pokemonName + " is immobilized by love!")
+                        self.drawCurrentText(pokemon1.pokemonName + " is immobilized by love!")
                 if pokemon1.volatile["Confuse"] > 0 and beatStatus:
                     if pokemon1.volatile["Confuse"] == 6:
                         pokemon1.volatile["Confuse"] = 0
-                        print(pokemon1.pokemonName + " snapped out of confusion!")
+                        self.drawCurrentText(pokemon1.pokemonName + " snapped out of confusion!")
                     elif pokemon1.volatile ["Confuse"] > 1:
                         snapOut = randint(1, 4)
                         if snapOut == 1:
                             pokemon1.volatile["Confuse"] = 0
-                            print(pokemon1.pokemonName + " snapped out of confusion!")
+                            self.drawCurrentText(pokemon1.pokemonName + " snapped out of confusion!")
                         else:
                             pokemon1.volatile["Confuse"] += 1
-                            print(pokemon1.pokemonName + " is confused!")
+                            self.drawCurrentText(pokemon1.pokemonName + " is confused!")
                             hitSelf = randint(1, 3)
                             if hitSelf == 1:
                                 beatStatus = False
-                                print(pokemon1.pokemonName + " hit themself in confusion!")
+                                self.drawCurrentText(pokemon1.pokemonName + " hit themself in confusion!")
                                 damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) 
                                 * 40 * (pokemon1.Stats["Attack"]/pokemon1.Stats["Defense"])) / 50) + 2) 
                                 * (pokemon1.statModifier["Attack"] / pokemon1.statModifier["Defense"] * (randint(85, 100) / 100)))
@@ -1242,11 +1937,11 @@ class Battle():
                                 pokemon1.recharge = 0
                     else:
                         pokemon1.volatile["Confuse"] += 1
-                        print(pokemon1.pokemonName + " is confused!")
+                        self.drawCurrentText(pokemon1.pokemonName + " is confused!")
                         hitSelf = randint(1, 3)
                         if hitSelf == 1:
                             beatStatus = False
-                            print(pokemon1.pokemonName + " hit themself in confusion!")
+                            self.drawCurrentText(pokemon1.pokemonName + " hit themself in confusion!")
                             damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) 
                             * 40 * (pokemon1.Stats["Attack"]/pokemon1.Stats["Defense"])) / 50) + 2) 
                             * (pokemon1.statModifier["Attack"] / pokemon1.statModifier["Defense"] * (randint(85, 100) / 100)))
@@ -1256,7 +1951,7 @@ class Battle():
                     if not (pokemon1.Moves[moveNumber - 1].moveName in ["Solar Beam", "Solar Blade"] and self.weather[0] == "Sunny Day"):
                         pokemon1.recharge = -1
                         pokemon1.chargeMove = moveNumber - 1
-                        print(pokemon1.pokemonName + " is preparing a " + pokemon1.Moves[moveNumber - 1].moveName + "!")
+                        self.drawCurrentText(pokemon1.pokemonName + " is preparing a " + pokemon1.Moves[moveNumber - 1].moveName + "!")
                         if pokemon1.Moves[moveNumber - 1].stat == "Intangible":
                             pokemon1.intangibility = True
                             pokemon1.volatile["Intangible"] = pokemon1.Moves[moveNumber - 1].moveName
@@ -1265,7 +1960,7 @@ class Battle():
                             pokemon1.intangibility = False
                             pokemon1.volatile["Intangible"] = " "
                             pokemon1.item.Consume()
-                            print(pokemon1.pokemonName + "'s Power Herb instantly charged up the attack!")
+                            self.drawCurrentText(pokemon1.pokemonName + "'s Power Herb instantly charged up the attack!")
                         else:
                             beatStatus = False
             else:
@@ -1274,23 +1969,25 @@ class Battle():
             if pokemon2.intangibility:
                 secondaryList = ["Failure"]
             elif pokemon1.turnOut > 1 and pokemon1.Moves[moveNumber - 1].moveName == "Fake Out":
-                print("Fake Out only works on the first turn out!")
+                self.drawCurrentText("Fake Out only works on the first turn out!")
             elif self.terrain[0] == "Psychic Terrain" and pokemon1.Moves[moveNumber - 1].priority > 1 and pokemon1.Moves[moveNumber - 1].power > 0 and not (pokemon2.Type1.typeName == "Flying" or pokemon2.Type2.typeName == "Flying" or pokemon2.ability.abilityName == "Levitate"):
-                print("Psychic Terrian blocks priority moves!")
+                self.drawCurrentText("Psychic Terrian blocks priority moves!")
             elif self.terrain[0] == "Clear" and pokemon1.Moves[moveNumber - 1].moveName == "Steel Roller":
-                print("Steel Roller failed to remove terrain!")
+                self.drawCurrentText("Steel Roller failed to remove terrain!")
             elif (pokemon1.ability.abilityName == "Damp" or pokemon2.ability.abilityName == "Damp") and not pokemon1.ability.abilityName == "Mold Breaker" and pokemon1.Moves[moveNumber - 1].moveName in ["Explosion", "Self-Destruct", "Misty Explosion", "Mind Blown"]:
-                print("Damp prevents Pokemon from exploding!")
+                self.drawCurrentText("Damp prevents Pokemon from exploding!")
             elif pokemon2.ability.abilityName == "Bulletproof" and not pokemon1.ability.abilityName == "Mold Breaker" and pokemon1.Moves[moveNumber].moveName in ["Acid Spray", "Aura Sphere", "Barrage", "Beak Blast", "Bullet Seed", 
                                                                                                                                     "Egg Bomb", "Electro Ball", "Energy Ball", "Focus Blast", "Gyro Ball", "Ice Ball", "Magnet Bomb", 
                                                                                                                                     "Mist Ball", "Mud Bomb", "Octazooka", "Pollen Puff", "Pyro Ball", "Rock Blast", "Rock Wrecker", 
                                                                                                                                     "Searing Shot", "Seed Bomb", "Shadow Ball", "Sludge Bomb", "Weather Ball", "Zap Cannon"]:
-                print("Bulletproof protects against ball and bomb moves!")
+                self.drawCurrentText("Bulletproof protects against ball and bomb moves!")
             elif (pokemon2.Type1.typeName == "Grass" or pokemon2.Type2.typeName == "Grass" or pokemon2.ability.abilityName == "Overcoat") and pokemon1.Moves[moveNumber - 1].moveName in ["Cotton Spore", "Magic Powder", "Poison Powder", "Powder", "Rage Powder", "Sleep Powder", "Spore", "Stun Spore"]:
-                print("Powder moves do not work on " + pokemon2.pokemonName + "!")
+                self.drawCurrentText("Powder moves do not work on " + pokemon2.pokemonName + "!")
             else:
                 if pokemon1.ability.abilityName == "Serene Grace":
                     secondaryList = pokemon1.Moves[moveNumber - 1].Secondary(True)
+                elif pokemon1.ability.abilityName == "Sheer Force"  and not pokemon1.Moves[moveNumber - 1].phySpe == "Status" and (pokemon1.Moves[moveNumber - 1].target == "Opponent" or not "-" in pokemon1.Moves[moveNumber - 1].stages):
+                    secondaryList = ["Failure"]
                 else:
                     secondaryList = pokemon1.Moves[moveNumber - 1].Secondary(False)
                 if secondaryList[0] == "Failure" and pokemon1.Moves[moveNumber - 1].moveName in ["Fire Fang", "Ice Fang", "Thunder Fang"]:
@@ -1321,7 +2018,7 @@ class Battle():
                         pokemon1.Moves[pokemon1.chargeMove].currentPP -= 2
                     else:
                         pokemon1.Moves[pokemon1.chargeMove].currentPP -= 1
-                    print(pokemon1.pokemonName + " used " + pokemon1.Moves[pokemon1.chargeMove].moveName + "!")
+                    self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[pokemon1.chargeMove].moveName + "!")
                     pokemon1.chargeMove = None
                     pokemon1.recharge = 0
                 else:
@@ -1329,7 +2026,7 @@ class Battle():
                         pokemon1.Moves[moveNumber - 1].currentPP -= 2    
                     else:
                         pokemon1.Moves[moveNumber - 1].currentPP -= 1
-                    print(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber - 1].moveName + "!")
+                    self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber - 1].moveName + "!")
                     pokemon1.volatile["Intangible"] = " "
                 if pokemon1.Moves[moveNumber - 1].stat == "Protect":
                     protectSuccess = randint(1, pokemon1.intangibleOdds)
@@ -1347,8 +2044,7 @@ class Battle():
                     if secondaryList[2] == "Self":
                         if pokemon1.Moves[moveNumber - 1].moveName == "Teleport" and attackingTeam.alivePokemon > 1:
                             if not computer:
-                                attackingTeam.showTeam()
-                                position = int(input("\nWho would you like to switch to? "))
+                                position = int(self.team1.switchMenu())
                             else:
                                 position = randint(1, 6)
                                 while attackingTeam.pokemonList[position - 1].currentHp <= 0  or attackingTeam.pokemonList[position - 1] == pokemon1:
@@ -1373,7 +2069,7 @@ class Battle():
                                     for movePP in range(4):
                                         pokemon1.Moves[movePP].currentPP = 5
                                     pokemon1.transformed = True
-                                    print(pokemon1.pokemonName + " transformed into " + pokemon2.pokemonName + "!")
+                                    self.drawCurrentText(pokemon1.pokemonName + " transformed into " + pokemon2.pokemonName + "!")
                                     self.switchIn(attackingTeam.activePokemon, defendingTeam.activePokemon)
                                 elif pokemon1.Moves[moveNumber - 1].stat == "Entry Hazard":
                                     if pokemon1.Moves[moveNumber - 1].moveName in ["Stealth Rock", "Sticky Web"]:
@@ -1386,8 +2082,7 @@ class Battle():
                                     pokemon2.modifyStat(secondaryList[1], secondaryList[3])
                                     if pokemon1.Moves[moveNumber - 1].moveName == "Parting Shot" and attackingTeam.alivePokemon > 1:
                                         if not computer:
-                                            attackingTeam.showTeam()
-                                            position = int(input("\nWho would you like to switch to? "))
+                                            position = int(self.team1.switchMenu())
                                         else:
                                             position = randint(1, 6)
                                             while attackingTeam.pokemonList[position - 1].currentHp <= 0  or attackingTeam.pokemonList[position - 1] == pokemon1:
@@ -1404,7 +2099,7 @@ class Battle():
                                         self.terrain = ["Clear", 0]
                 elif secondaryList[0] == "Status":
                     if self.terrain[0] == "Misty Terrain" and not (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
-                        print("Misty Terrain prevents Pokemon from being statused!")
+                        self.drawCurrentText("Misty Terrain prevents Pokemon from being statused!")
                     else:
                         if secondaryList[2] == "Self":
                             if pokemon1.status == "Healthy" or pokemon1.Moves[moveNumber - 1].moveName in ["Refresh", "Rest"]:
@@ -1418,7 +2113,7 @@ class Battle():
                     pokemon2.changeStatus("Healthy")
                 elif secondaryList[0] == "Volatile":
                     if self.terrain[0] == "Misty Terrain" and secondaryList[1] == "Confuse" and not (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
-                        print("Misty Terrain prevents Pokemon from being statused!")
+                        self.drawCurrentText("Misty Terrain prevents Pokemon from being statused!")
                     else:
                         if secondaryList[2] == "Self":
                             if pokemon1.volatile[secondaryList[1]] == 0:
@@ -1452,20 +2147,20 @@ class Battle():
                         else:
                             self.weather = [pokemon1.Moves[moveNumber - 1].moveName, 5]
                         if self.weather[0] == "Rain Dance":
-                            print("It started to rain!")
+                            self.drawCurrentText("It started to rain!")
                         elif self.weather[0] == "Sunny Day":
-                            print("The sunlight turned harsh!")
+                            self.drawCurrentText("The sunlight turned harsh!")
                         elif self.weather[0] == "Hail":
-                            print("It started to hail!")
+                            self.drawCurrentText("It started to hail!")
                         elif self.weather[0] == "Sandstorm":
-                            print("A sandstorm kicked up!")
+                            self.drawCurrentText("A sandstorm kicked up!")
                 elif pokemon1.Moves[moveNumber - 1].stat == "Terrain":
                     if self.terrain[0] != pokemon1.Moves[moveNumber - 1].moveName:
                         if pokemon1.item.itemName == "Terrain Extender":
                             self.terrain = [pokemon1.Moves[moveNumber - 1].moveName, 8]
                         else:
                             self.terrain = [pokemon1.Moves[moveNumber - 1].moveName, 5]
-                        print(pokemon1.pokemonName + " created a " + pokemon1.Moves[moveNumber - 1].moveName + "!")
+                        self.drawCurrentText(pokemon1.pokemonName + " created a " + pokemon1.Moves[moveNumber - 1].moveName + "!")
                 
                 if pokemon1.Moves[moveNumber - 1].power == 0:
                     if pokemon1.Moves[moveNumber - 1].moveName in ["Moonlight", "Synthesis", "Morning Sun"]:
@@ -1482,13 +2177,13 @@ class Battle():
                     healDamage = floor(pokemon1.Moves[moveNumber - 1].healing * pokemon1.Stats["HP"] * weatherShift)
                 elif pokemon1.Moves[moveNumber - 1].moveName == "Struggle":
                     if pokemon2.intangibility:
-                        print(pokemon2.pokemonName + " is in an intangible state!")
+                        self.drawCurrentText(pokemon2.pokemonName + " is in an intangible state!")
                         healDamage = 0
                     else:
                         healDamage = (-1) * floor(pokemon1.Stats["HP"] / 4)
                 else:
                     if pokemon2.intangibility and not (pokemon1.Moves[moveNumber - 1].moveName in ["Earthquake", "Magnitude", "Surf", "Whirlpool", "Twister", "Gust", "Thunder", "Hurricane", "Sky Uppercut"] or pokemon1.Moves[moveNumber - 1].feint or (pokemon1.Moves[moveNumber - 1].target == "Self" and pokemon1.Mobes[moveNumber - 1].phySpe == "Status")):
-                        print(pokemon2.pokemonName + " is in an intangible state!")
+                        self.drawCurrentText(pokemon2.pokemonName + " is in an intangible state!")
                         healDamage = 0
                     elif typeEffect > 0:
                         if (pokemon1.Moves[moveNumber - 1].moveName in ["Earthquake", "Magnitude", "Surf", "Whirlpool", "Twister", "Gust", "Thunder", "Hurricane", "Sky Uppercut"] or pokemon1.Moves[moveNumber - 1].feint) and pokemon2.intangibility:
@@ -1501,9 +2196,9 @@ class Battle():
                             elif pokemon1.Moves[moveNumber - 1].moveName in ["Thunder", "Hurricane", "Sky Uppercut"] and pokemon2.volatile["Intangible"] == "Fly":
                                 damage *= 1
                             elif pokemon1.Moves[moveNumber - 1].feint and pokemon2.volatile["Intangible"] == "Protect":
-                                print(pokemon2.pokemonName + " couldn't protect itself!")
+                                self.drawCurrentText(pokemon2.pokemonName + " couldn't protect itself!")
                             else:
-                                print(pokemon2.pokemonName + " is in an intangible state!")
+                                self.drawCurrentText(pokemon2.pokemonName + " is in an intangible state!")
                                 healDamage = 0
                                 damage = 0
                         elif pokemon1.Moves[moveNumber - 1].stat == "OHKO":
@@ -1530,7 +2225,7 @@ class Battle():
                             if pokemon1.Moves[moveNumber - 1].moveType.typeName in pokemon2.item.effect and pokemon2.item.secondEffect == "Defend" and typeEffect > 1 and not pokemon2.item.consumed and not pokemon1.ability.abilityName == "Unnerve":
                                 pokemon2.item.Consume()
                                 itemMult = pokemon2.item.multiplier
-                                print(pokemon2.pokemonName + " lessened the damage with its " + pokemon2.item.itemName + "!")
+                                self.drawCurrentText(pokemon2.pokemonName + " lessened the damage with its " + pokemon2.item.itemName + "!")
                             else:
                                 itemMult = 1
                             if pokemon1.Moves[moveNumber - 1].moveName in ["Brick Break", "Psychic Fangs"] and typeEffect > 0:
@@ -1544,46 +2239,46 @@ class Battle():
                                 multiHit = attackHits + 1
                             else:
                                 multiHit = 1
-                            if pokemon2.volatile["Substitute"] <= 0 or pokemon1.Moves[moveNumber - 1].sound:
-                                critChance = pokemon1.Moves[moveNumber - 1].crit
-                                if pokemon2.ability.effect[0] == "Critical":
-                                    if pokemon2.ability.effect[1] == "Immunity" and not pokemon1.ability.effect[0] == "Mold Breaker":
-                                        crit = 25
-                                        sniperBoost = 1
-                                    elif pokemon1.ability.effect[1] == "Boost":
-                                        crit = randint(1, 24)
-                                        sniperBoost = 2
-                                    else:
-                                        crit = randint(1, 24)
-                                        sniperBoost = 1.5
-                                    if pokemon1.ability.effect[1] == "Lucky":
-                                        if critChance == 1:
-                                            critChance = 3
-                                        elif critChance == 3:
-                                            critChance = 12
-                                        elif critChance == 12:
-                                            critChance = 24
+                            critChance = pokemon1.Moves[moveNumber - 1].crit
+                            if pokemon2.ability.effect[0] == "Critical":
+                                if pokemon2.ability.effect[1] == "Immunity" and not pokemon1.ability.effect[0] == "Mold Breaker":
+                                    crit = 25
+                                    sniperBoost = 1
+                                elif pokemon1.ability.effect[1] == "Boost":
+                                    crit = randint(1, 24)
+                                    sniperBoost = 2
                                 else:
                                     crit = randint(1, 24)
                                     sniperBoost = 1.5
-                                if pokemon1.volatile["Pumped"] == 1:
+                                if pokemon1.ability.effect[1] == "Lucky":
+                                    if critChance == 1:
+                                        critChance = 3
+                                    elif critChance == 3:
+                                        critChance = 12
+                                    elif critChance == 12:
+                                        critChance = 24
+                            else:
+                                crit = randint(1, 24)
+                                sniperBoost = 1.5
+                            if pokemon1.volatile["Pumped"] == 1:
+                                if critChance == 1:
+                                    critChance = 12
+                                elif critChance == 3 or critChance == 12:
+                                    critChance = 24
+                            if pokemon1.item.effect == "Critical":
+                                if pokemon1.item.secondEffect == "Signature":
                                     if critChance == 1:
                                         critChance = 12
                                     elif critChance == 3 or critChance == 12:
                                         critChance = 24
-                                if pokemon1.item.effect == "Critical":
-                                    if pokemon1.item.secondEffect == "Signature":
-                                        if critChance == 1:
-                                            critChance = 12
-                                        elif critChance == 3 or critChance == 12:
-                                            critChance = 24
-                                    else:
-                                        if critChance == 1:
-                                            critChance = 3
-                                        elif critChance == 3:
-                                            critChance = 12
-                                        elif critChance == 12:
-                                            critChance = 24
+                                else:
+                                    if critChance == 1:
+                                        critChance = 3
+                                    elif critChance == 3:
+                                        critChance = 12
+                                    elif critChance == 12:
+                                        critChance = 24
+                            if pokemon2.volatile["Substitute"] <= 0 or pokemon1.Moves[moveNumber - 1].sound:
                                 if crit <= critChance:
                                     if pokemon1.Moves[moveNumber - 1].phySpe == "Physical" or pokemon1.Moves[moveNumber].moveName in ["Secret Sword", "Psyshock", "Psystrike"]:
                                         if pokemon2.statModifier["Defense"] > 1:
@@ -1606,7 +2301,7 @@ class Battle():
                                         else:
                                             attMod = 1
                                     pokemon2.currentHp -= int(damage * multiHit * sniperBoost * itemMult * defMod / attMod)
-                                    print("Critical hit!")
+                                    self.drawCurrentText("Critical hit!")
                                     if pokemon2.currentHp < 0:
                                         healDamage = ceil((damage * multiHit + pokemon2.currentHp) * sniperBoost * pokemon1.Moves[moveNumber - 1].healing)
                                     else:
@@ -1644,7 +2339,7 @@ class Battle():
                                         else:
                                             attMod = 1
                                     pokemon2.volatile["Substitute"] -= int(damage * multiHit * 1.5 * defMod / attMod * multiHit)
-                                    print("Critical hit!")
+                                    self.drawCurrentText("Critical hit!")
                                     if pokemon2.volatile["Substitute"] < 0:
                                         healDamage = ceil((damage * multiHit + pokemon2.volatile["Substitute"]) * sniperBoost * pokemon1.Moves[moveNumber - 1].healing)
                                     else:
@@ -1654,39 +2349,39 @@ class Battle():
                                     healDamage = ceil(damage * pokemon1.Moves[moveNumber - 1].healing)
                                 if floor(pokemon2.volatile["Substitute"]) <= 0:
                                     pokemon2.volatile["Substitute"] = 0
-                                    print(pokemon2.pokemonName + "'s substitute broke!")
+                                    self.drawCurrentText(pokemon2.pokemonName + "'s substitute broke!")
                         if hits > 1:
-                            print("Hit " + str(hits) + " times!")
+                            self.drawCurrentText("Hit " + str(hits) + " times!")
                 
                 if pokemon1.Moves[moveNumber - 1].power > 0:
                     if typeEffect == 0:
                         if pokemon2.ability.effect[0] == "Type Immunity" and pokemon1.Moves[moveNumber - 1].moveType == pokemon2.ability.effect[1]:
                             if pokemon2.ability.effect[2] == "None":
-                                print(pokemon2.pokemonName + " levitated over the attack!")
+                                self.drawCurrentText(pokemon2.pokemonName + " levitated over the attack!")
                             elif pokemon2.ability.effect[2] == "Heal":
                                 pokemon2.currentHp += pokemon2.Stats["HP"] * .25
-                                print(pokemon2.pokemonName + " restored some health!")
+                                self.drawCurrentText(pokemon2.pokemonName + " restored some health!")
                                 if pokemon2.currentHp > pokemon2.Stats["HP"]:
                                     pokemon2.currentHp = pokemon2.Stats["HP"]
                             elif pokemon2.ability.success == 1:
                                 pokemon2.modifyStat(pokemon2.ability.effect[2], "1")
                         else:
-                            print("It had no effect...")
+                            self.drawCurrentText("It had no effect...")
                         healDamage = 0
                     else:
                         if pokemon1.Moves[moveNumber - 1].charge == "Recharge":
                             pokemon1.recharge = 1
                         if typeEffect < 1:
-                            print("It was not very effective.")
+                            self.drawCurrentText("It was not very effective.")
                         elif typeEffect > 1:
-                            print("It was super effective!")
+                            self.drawCurrentText("It was super effective!")
                     
                     if pokemon1.Moves[moveNumber - 1].moveName == "Fling":       
                         if not (pokemon1.item.consumed or pokemon1.item.fling == 0):
-                            print(pokemon1.pokemonName + " flung its " + pokemon1.item.itemName + "!")
+                            self.drawCurrentText(pokemon1.pokemonName + " flung its " + pokemon1.item.itemName + "!")
                             pokemon1.item.Consume()
                         else:
-                            print(pokemon1.pokemonName + " failed to fling a thing!")
+                            self.drawCurrentText(pokemon1.pokemonName + " failed to fling a thing!")
                         
                         itemDamage = False
                         if "Damage" in pokemon2.item.effect:
@@ -1699,12 +2394,11 @@ class Battle():
                                     itemDamage = True
                         if itemDamage:
                             pokemon1.currentHp -= round(pokemon1.Stats["HP"] * pokemon2.item.multiplier)
-                            print(pokemon1.pokemonName + " was hurt by " + pokemon2.item.itemName + "!")
+                            self.drawCurrentText(pokemon1.pokemonName + " was hurt by " + pokemon2.item.itemName + "!")
                         
                     if (pokemon1.Moves[moveNumber - 1].moveName in ["Volt Switch", "U-turn", "Flip Turn"] or pokemon1.currentHp <= 1) and attackingTeam.alivePokemon > 1:
                         if not computer:
-                            attackingTeam.showTeam()
-                            position = int(input("\nWho would you like to switch to? "))
+                            position = int(self.team1.switchMenu())
                         else:
                             position = randint(1, 6)
                             while attackingTeam.pokemonList[position - 1].currentHp <= 0 or attackingTeam.pokemonList[position - 1] == pokemon1:
@@ -1723,34 +2417,36 @@ class Battle():
                 
                 if healDamage > 0:
                     if pokemon2.ability.abilityName == "Liquid Ooze" and pokemon1.Moves[moveNumber - 1].power > 0:
-                        print(pokemon1.pokemonName + " sucked in liquid ooze!")
+                        self.drawCurrentText(pokemon1.pokemonName + " sucked in liquid ooze!")
                         pokemon1.currentHp -= healDamage
                     else:
-                        print(pokemon1.pokemonName + " had its health restored!")
+                        self.drawCurrentText(pokemon1.pokemonName + " had its health restored!")
                         pokemon1.currentHp += healDamage
                 elif healDamage < 0 and not (pokemon1.ability.abilityName == "Rock Head" and (pokemon1.Moves[moveNumber - 1].moveName == "Struggle" or pokemon1.Moves[moveNumber - 1].phySpe == "Status")):
-                    print(pokemon1.pokemonName + " was hit in recoil!")
+                    self.drawCurrentText(pokemon1.pokemonName + " was hit in recoil!")
                     pokemon1.currentHp += healDamage
-                    
+        
+        elif (pokemon2.ability.abilityName == "Magic Bounce" or (self.lastMove[2 - playerNum] == "Magic Coat" and priority2 == 4)) and not pokemon1.ability.abilityName == "Magic Bounce" and pokemon1.Moves[moveNumber - 1].phySpe == "Status" and pokemon1.Moves[moveNumber - 1].target == "Opponent":
+            self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber - 1].moveName + "!\nThe attack was bounced back!")      
         else:
             if not pokemon1.chargeMove is None:
                 if pokemon2.ability.abilityName == "Pressure":
                     pokemon1.Moves[pokemon1.chargeMove].currentPP -= 2
                 else:
                     pokemon1.Moves[pokemon1.chargeMove].currentPP -= 1
-                print(pokemon1.pokemonName + " used " + pokemon1.Moves[pokemon1.chargeMove].moveName + "!")
+                self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[pokemon1.chargeMove].moveName + "!")
                 pokemon1.chargeMove = None
             else:
                 if pokemon2.ability.abilityName == "Pressure":
                     pokemon1.Moves[moveNumber - 1].currentPP -= 2
                 else:
                     pokemon1.Moves[moveNumber - 1].currentPP -= 1
-                print(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber - 1].moveName + "!")
-            print("The attack missed!")
+                self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber - 1].moveName + "!")
+            self.drawCurrentText("The attack missed!")
             
         if pokemon1.Moves[moveNumber - 1].currentPP <= 0 and str(pokemon1.item) == "Leppa Berry" and not pokemon1.item.consumed and not pokemon1.ability.abilityName == "Unnerve":
             pokemon1.item.Consume()
-            print(pokemon1.pokemonName + " restored PP with its Leppa Berry!")
+            self.drawCurrentText(pokemon1.pokemonName + " restored PP with its Leppa Berry!")
             if 10 <= pokemon1.Moves[moveNumber - 1].pp:
                 pokemon1.Moves[moveNumber - 1].currentPP = 10
             else:
@@ -1765,13 +2461,12 @@ class Battle():
         elif pokemon1.currentHp <= 0:
             pokemon1.currentHp = 0
             pokemon2.volatile["Trap"] = 0
-            print(pokemon1.pokemonName + " fainted!")
+            self.drawCurrentText(pokemon1.pokemonName + " fainted!")
             attackingTeam.alivePokemon -= 1
             if attackingTeam.alivePokemon > 0:
                  while attackingTeam.activePokemon.currentHp <= 0:
                      if not computer:
-                        attackingTeam.showTeam()
-                        position = int(input("\nWho would you like to switch to? "))
+                        position = int(self.team1.switchMenu())
                      else:
                         position = randint(1, 6)
                         while attackingTeam.pokemonList[position - 1].currentHp <= 0 or attackingTeam.pokemonList[position - 1] == pokemon1:
@@ -1795,7 +2490,7 @@ class Battle():
             if not sturdy:
                 pokemon2.currentHp = 0
                 pokemon1.volatile["Trap"] = 0
-                print(pokemon2.pokemonName + " fainted!")
+                self.drawCurrentText(pokemon2.pokemonName + " fainted!")
                 if moxie:
                     if pokemon1.ability.effect[0] == "Moxie":
                         if pokemon1.ability.effect[1] == "Best":
@@ -1812,8 +2507,7 @@ class Battle():
                 if defendingTeam.alivePokemon > 0:
                      while defendingTeam.activePokemon.currentHp <= 0:
                          if not computer2:
-                                defendingTeam.showTeam()
-                                position = int(input("\nWho would you like to switch to? "))
+                             position = int(self.team1.switchMenu())
                          else:
                             position = randint(1, 6)
                             while defendingTeam.pokemonList[position - 1].currentHp <= 0  or defendingTeam.pokemonList[position - 1] == pokemon2:
@@ -1822,11 +2516,11 @@ class Battle():
                      self.switchIn(defendingTeam.activePokemon, attackingTeam.activePokemon)
                      
         if pokemon2.status in pokemon2.item.effect and not pokemon2.item.consumed and "Berry" in pokemon2.item.itemName and not pokemon1.ability.abilityName == "Unnerve":
-            print(pokemon2.pokemonName + " status was cured by a "+ pokemon2.item.itemName + "!")
+            self.drawCurrentText(pokemon2.pokemonName + " status was cured by a "+ pokemon2.item.itemName + "!")
             pokemon2.changeStatus("Healthy")
             pokemon2.item.Consume()
         elif pokemon2.volatile["Confuse"] == 1 and "Confuse" in pokemon2.item.effect and not pokemon2.item.consumed and not pokemon1.ability.abilityName == "Unnerve":
-            print(pokemon2.pokemonName + " status was cured by a berry!")
+            self.drawCurrentText(pokemon2.pokemonName + " status was cured by a berry!")
             pokemon2.volatile["Confuse"] = 0
             pokemon2.item.Consume()
         elif (pokemon2.volatile["Trap"] > 0 or not pokemon2.volatile["Block Condition"] == "None") and not pokemon2.item.consumed:
@@ -1838,12 +2532,12 @@ class Battle():
                                  "Steam Eruption", "Burn Up", "Pyro Ball",
                                  "Scorching Sands"]:
                     pokemon2.changeStatus("Healthy")
-                    print(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber -1].moveName +
+                    self.drawCurrentText(pokemon1.pokemonName + " used " + pokemon1.Moves[moveNumber -1].moveName +
                           " and thawed " + pokemon2.pokemonName + " out!")
         elif pokemon2.status in ["Rest", "Sleep"]:
             if pokemon1.Moves[moveNumber - 1].moveName == "Wake-Up Slap":
                 pokemon2.changeStatus("Healthy")
-                print(pokemon2.pokemonName + " was woken up with Wake-Up Slap!")
+                self.drawCurrentText(pokemon2.pokemonName + " was woken up with Wake-Up Slap!")
                 
         if self.terrain == "Misty Terrain":
             if not pokemon1.status == "Healthy" and not (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
@@ -1854,6 +2548,8 @@ class Battle():
                 pokemon1.volatile["Confuse"] = 0
             if pokemon2.volatile["Confuse"] >= 1 and not (pokemon2.Type1.typeName == "Flying" or pokemon2.Type2.typeName == "Flying" or pokemon2.ability.abilityName == "Levitate"):
                 pokemon2.volatile["Confuse"] = 0
+                
+        self.healthBar()
                      
     def Turn(self, megaDict, megaList, computer = False):
         if self.team1.activePokemon.turnOut == 0 and self.team2.activePokemon.turnOut == 0:
@@ -1874,46 +2570,7 @@ class Battle():
         if self.team2.activePokemon.turnOut == 1 and self.team2.activePokemon.item.itemName == "Choice Scarf":
             scarfSpeed /= 1.5
         
-        if self.team1.activePokemon.gender == "None":
-            print("\n" + self.team1.activePokemon.pokemonName + " " +
-            str(self.team1.activePokemon.currentHp) + "/" + 
-            str(self.team1.activePokemon.Stats["HP"]) + "\nItem: " +
-            str(self.team1.activePokemon.item) + "\nAbility: " + 
-            str(self.team1.activePokemon.ability.abilityName))
-        else:
-            print("\n" + self.team1.activePokemon.pokemonName + " (" + 
-            self.team1.activePokemon.gender + ") " +
-            str(self.team1.activePokemon.currentHp) + "/" + 
-            str(self.team1.activePokemon.Stats["HP"]) + "\nItem: " +
-            str(self.team1.activePokemon.item) + "\nAbility: " + 
-            str(self.team1.activePokemon.ability.abilityName))
-        
-        if computer:
-            if self.team2.activePokemon.gender == "None":
-                print("\n" + self.team2.activePokemon.pokemonName + " " +
-                str(self.team2.activePokemon.currentHp) + "/" + 
-                str(self.team2.activePokemon.Stats["HP"]))
-            else:
-                print("\n" + self.team2.activePokemon.pokemonName + " (" + 
-                self.team2.activePokemon.gender + ") " +
-                str(self.team2.activePokemon.currentHp) + "/" + 
-                str(self.team2.activePokemon.Stats["HP"]))
-        else:    
-            if self.team2.activePokemon.gender == "None":
-                print("\n" + self.team2.activePokemon.pokemonName + " " +
-                str(self.team2.activePokemon.currentHp) + "/" + 
-                str(self.team2.activePokemon.Stats["HP"]) + "\nItem: " +
-                str(self.team2.activePokemon.item))
-            else:
-                print("\n" + self.team2.activePokemon.pokemonName + " (" + 
-                self.team2.activePokemon.gender + ") " +
-                str(self.team2.activePokemon.currentHp) + "/" + 
-                str(self.team2.activePokemon.Stats["HP"]) + "\nItem: " +
-                str(self.team2.activePokemon.item))
-        
         if self.team1.activePokemon.recharge == 0:
-            print()
-            self.team1.activePokemon.showMoves()
             if self.team1.activePokemon.volatile["Trap"] > 0 or not self.team1.activePokemon.volatile["Block Condition"] == "None":
                 player1Choice == "attack"
                 willStruggle = True
@@ -1921,35 +2578,35 @@ class Battle():
                     if self.team1.activePokemon.Moves[moveNum].currentPP > 0 and (moveNum + 1) not in self.team1.activePokemon.volatile["Blocked Moves"]:
                         willStruggle = False
                 if willStruggle:
-                    print(self.team1.activePokemon.pokemonName + " has run out of moves!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " has run out of moves!")
                     team1Move = 5
                     priority1 = 0
                 else:
                     team1Move = int(input("Choose a move "))
-                    while self.team1.activePokemon.Moves[team1Move - 1].currentPP <= 0 or team1Move in self.team1.activePokemon.volatile["Blocked Moves"]:
-                        team1Move = int(input("The move has no PP!\nChoose a Move "))
                     priority1 = self.team1.activePokemon.Moves[team1Move - 1].priority
             else:
-                while not player1Choice in ["attack", "switch"]:
-                    player1Choice = str(input("Would you like to attack or switch? "))
+                while not player1Choice in ["attack", "switch", "forfeit"]:
+                    choiceList = self.mainMenu()
+                    player1Choice = choiceList[0]
                     if player1Choice == "switch":
                         priority1 = 6
-                        self.team1.showTeam()
-                        player1Switch = int(input("Who would you like to switch to? "))
                     elif player1Choice == "attack":
                        willStruggle = True
                        for moveNum in range(5):
                            if self.team1.activePokemon.Moves[moveNum].currentPP > 0 and (moveNum + 1) not in self.team1.activePokemon.volatile["Blocked Moves"]:
                                willStruggle = False
                        if willStruggle:
-                           print(self.team1.activePokemon.pokemonName + " has run out of moves!")
+                           self.drawCurrentText(self.team1.activePokemon.pokemonName + " has run out of moves!")
                            team1Move = 5
                            priority1 = 0
                        else:
-                           team1Move = int(input("Choose a move "))
-                           while self.team1.activePokemon.Moves[team1Move - 1].currentPP <= 0 or team1Move in self.team1.activePokemon.volatile["Blocked Moves"]:
-                               team1Move = int(input("The move has no PP!\nChoose a Move "))
+                           team1Move = choiceList[1]
+
                            priority1 = self.team1.activePokemon.Moves[team1Move - 1].priority
+                    elif player1Choice == "forfeit":
+                        priority1 = 7
+                        self.drawCurrentText("Player 1 has forfeitted")
+                        return True
         elif self.team1.activePokemon.recharge == -1:
             player1Choice = "attack"
             team1Move =  self.team1.activePokemon.chargeMove + 1
@@ -1961,8 +2618,7 @@ class Battle():
             
         if self.team2.activePokemon.recharge == 0:
             if not computer:
-                print("\n" + self.team2.activePokemon.pokemonName + "\n")
-                self.team2.activePokemon.showMoves()
+                self.drawCurrentText("\n" + self.team2.activePokemon.pokemonName + "\n")
                 if self.team2.activePokemon.volatile["Trap"] > 0 or not self.team2.activePokemon.volatile["Block Condition"] == "None":
                     player2Choice == "attack"
                     team2Move = int(input("Choose a move "))
@@ -1970,19 +2626,18 @@ class Battle():
                         team2Move = int(input("The move has no PP!\nChoose a Move "))
                     priority2 = self.team2.activePokemon.Moves[team2Move - 1].priority
                 else:
-                    while not player2Choice in ["attack", "switch"]:
-                        player2Choice = str(input("Would you like to attack or switch? "))
+                    while not player2Choice in ["attack", "switch", "forfeit"]:
+                        player2Choice = self.mainMenu()
                         if player2Choice == "switch":
                             priority2 = 6
-                            self.team2.showTeam()
-                            player2Switch = int(input("Who would you like to switch to? "))
+                            player2Switch = int(self.team2.switchMenu())
                         elif player2Choice == "attack":
                             willStruggle = True
                             for moveNum in range(5):
                                 if self.team2.activePokemon.Moves[moveNum].currentPP > 0 and (moveNum + 1) not in self.team2.activePokemon.volatile["Blocked Moves"]:
                                     willStruggle = False
                             if willStruggle:
-                                print(self.team2.activePokemon.pokemonName + " has run out of moves!")
+                                self.drawCurrentText(self.team2.activePokemon.pokemonName + " has run out of moves!")
                                 team2Move = 5
                                 priority2 = 0
                             else:
@@ -2074,15 +2729,17 @@ class Battle():
                 priority2 += 1
             elif self.team2.activePokemon.Moves[team2Move - 1].moveType.typeName == self.team2.activePokemon.ability.effect[1]:
                 priority2 += 1
-            elif self.team2.activePokemon.Moves[team1Move - 1].healing > 0 and self.team2.activePokemon.ability.effect[1] == "Heal":
+            elif self.team2.activePokemon.Moves[team2Move - 1].healing > 0 and self.team2.activePokemon.ability.effect[1] == "Heal":
                 priority1 += 3
         
         if player1Choice == "switch":
-            self.team1.Switch(player1Switch)
+            self.team1.Switch(choiceList[1])
             self.switchIn(self.team1.activePokemon, self.team2.activePokemon)
+            self.healthBar()
         if player2Choice == "switch":
             self.team2.Switch(player2Switch)
             self.switchIn(self.team2.activePokemon, self.team1.activePokemon)
+            self.healthBar()
         
         if not self.team1.mega and not player1Choice == "switch":
             self.team1.megaEvolve(megaDict, megaList)
@@ -2212,19 +2869,19 @@ class Battle():
                     self.team1.activePokemon.modifyStat(self.team1.activePokemon.item.secondEffect, "1")
                     if self.team1.activePokemon.item.consumable:
                         self.team1.activePokemon.item.Consume()
-                    print(self.team1.activePokemon.pokemonName + " boosted its " + self.team1.activePokemon.item.secondEffect + " with its berry!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " boosted its " + self.team1.activePokemon.item.secondEffect + " with its berry!")
             elif self.team1.activePokemon.item.multiplier > 1:
                 if self.team1.activePokemon.currentHp < .5 * self.team1.activePokemon.Stats["HP"]:
                     self.team1.activePokemon.currentHp += self.team1.activePokemon.item.multiplier
                     if self.team1.activePokemon.item.consumable:
                         self.team1.activePokemon.item.Consume()
-                    print(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
             elif self.team1.activePokemon.item.multiplier > .25:
                 if self.team1.activePokemon.currentHp < .25 * self.team1.activePokemon.Stats["HP"]:
                     self.team1.activePokemon.currentHp += floor(self.team1.activePokemon.item.multiplier * self.team1.activePokemon.Stats["HP"])
                     if self.team1.activePokemon.item.consumable:
                         self.team1.activePokemon.item.Consume()
-                    print(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
                     if self.team1.activePokemon.item.secondEffect == self.team1.activePokemon.minusNature:
                         self.team1.activePokemon.changeStatus("Confuse")
             else:
@@ -2232,7 +2889,7 @@ class Battle():
                     self.team1.activePokemon.currentHp += floor(self.team1.activePokemon.item.multiplier * self.team1.activePokemon.Stats["HP"])
                     if self.team1.activePokemon.item.consumable:
                         self.team1.activePokemon.item.Consume()
-                    print(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " restored health with its " + self.team1.activePokemon.item.itemName + "!")
             if self.team1.activePokemon.currentHp > self.team1.activePokemon.Stats["HP"]:
                 self.team1.activePokemon.currentHp = self.team1.activePokemon.Stats["HP"]
             
@@ -2243,14 +2900,14 @@ class Battle():
                 self.team1.activePokemon.volatile["Badly Poison"] += 1
             else:
                 self.team1.activePokemon.currentHp -= ceil(self.team1.activePokemon.Stats["HP"] * (1/8))
-            print(self.team1.activePokemon.pokemonName + " was hurt by poison!")
+            self.drawCurrentText(self.team1.activePokemon.pokemonName + " was hurt by poison!")
         elif self.team1.activePokemon.status == "Burn":
             self.team1.activePokemon.currentHp -= ceil(self.team1.activePokemon.Stats["HP"] * (1/16))
-            print(self.team1.activePokemon.pokemonName + " was hurt by its burn!")
+            self.drawCurrentText(self.team1.activePokemon.pokemonName + " was hurt by its burn!")
         if self.team1.activePokemon.volatile["Trap"] != 0:
             self.team1.activePokemon.currentHp -= floor(self.team1.activePokemon.Stats["HP"] * (1/8))
             self.team1.activePokemon.volatile["Trap"] -= 1
-            print(self.team1.activePokemon.pokemonName + " was hurt by the opponent's trap!")
+            self.drawCurrentText(self.team1.activePokemon.pokemonName + " was hurt by the opponent's trap!")
         if self.team1.activePokemon.volatile["Block Condition"] == "Octolock":
             self.team1.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
         
@@ -2261,14 +2918,14 @@ class Battle():
                 self.team2.activePokemon.volatile["Badly Poison"] += 1
             else:
                 self.team2.activePokemon.currentHp -= ceil(self.team2.activePokemon.Stats["HP"] * (1/8))
-            print(self.team2.activePokemon.pokemonName + " was hurt by poison!")
+            self.drawCurrentText(self.team2.activePokemon.pokemonName + " was hurt by poison!")
         elif self.team2.activePokemon.status == "Burn":
             self.team2.activePokemon.currentHp -= ceil(self.team2.activePokemon.Stats["HP"] * (1/16))
-            print(self.team2.activePokemon.pokemonName + " was hurt by its burn!")
+            self.drawCurrentText(self.team2.activePokemon.pokemonName + " was hurt by its burn!")
         if self.team2.activePokemon.volatile["Trap"] != 0:
             self.team2.activePokemon.currentHp -= floor(self.team2.activePokemon.Stats["HP"] * (1/8))
             self.team2.activePokemon.volatile["Trap"] -= 1
-            print(self.team2.activePokemon.pokemonName + " was hurt by the opponent's trap!")
+            self.drawCurrentText(self.team2.activePokemon.pokemonName + " was hurt by the opponent's trap!")
         if self.team2.activePokemon.volatile["Block Condition"] == "Octolock":
             self.team2.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
         
@@ -2277,70 +2934,68 @@ class Battle():
             if self.weather[1] > 0:
                 if self.weather[0] == "Hail" and not (self.team1.activePokemon.Type1.typeName == "Ice" or self.team1.activePokemon.Type2.typeName == "Ice" or self.team1.activePokemon.ability.abilityName in ["Ice Body", "Snow Cloak", "Magic Guard", "Overcoat"]):
                     self.team1.activePokemon.currentHp -= int(self.team1.activePokemon.Stats["HP"] / 16)
-                    print(self.team1.activePokemon.pokemonName + " was buffeted by Hail!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " was buffeted by Hail!")
                 if self.weather[0] == "Hail" and not (self.team1.activePokemon.Type2.typeName == "Ice" or self.team2.activePokemon.Type2.typeName == "Ice" or self.team2.activePokemon.ability.abilityName in ["Ice Body", "Snow Cloak", "Magic Guard", "Overcoat"]):
                     self.team2.activePokemon.currentHp -= int(self.team2.activePokemon.Stats["HP"] / 16)
-                    print(self.team2.activePokemon.pokemonName + " was buffeted by Hail!")
+                    self.drawCurrentText(self.team2.activePokemon.pokemonName + " was buffeted by Hail!")
                 if self.weather[0] == "Sandstorm" and not (self.team1.activePokemon.Type1.typeName in ["Rock", "Steel", "Ground"] or self.team1.activePokemon.Type2.typeName in ["Rock", "Steel", "Ground"] or self.team1.activePokemon.ability.abilityName in ["Sand Force", "Sand Rush", "Sand Veil", "Magic Guard", "Overcoat"]):
                     self.team1.activePokemon.currentHp -= int(self.team1.activePokemon.Stats["HP"] / 16)
-                    print(self.team1.activePokemon.pokemonName + " was buffeted by Sandstorm!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " was buffeted by Sandstorm!")
                 if self.weather[0] == "Sandstorm" and not (self.team2.activePokemon.Type2.typeName in ["Rock", "Steel", "Ground"] or self.team2.activePokemon.Type2.typeName in ["Rock", "Steel", "Ground"] or self.team2.activePokemon.ability.abilityName in ["Sand Force", "Sand Rush", "Sand Veil", "Magic Guard", "Overcoat"]):
                     self.team2.activePokemon.currentHp -= int(self.team2.activePokemon.Stats["HP"] / 16)
-                    print(self.team2.activePokemon.pokemonName + " was buffeted by Sandstorm!")
+                    self.drawCurrentText(self.team2.activePokemon.pokemonName + " was buffeted by Sandstorm!")
                 if self.weather[0] == "Sunny Day" and self.team1.activePokemon.ability.abilityName in ["Solar Power"]:
                     self.team1.activePokemon.currentHp -= int(self.team1.activePokemon.Stats["HP"] / 8)
-                    print(self.team1.activePokemon.pokemonName + " was hurt by the sun!")
+                    self.drawCurrentText(self.team1.activePokemon.pokemonName + " was hurt by the sun!")
                 if self.weather[0] == "Sunny Day" and self.team2.activePokemon.ability.abilityName in ["Solar Power"]:
                     self.team2.activePokemon.currentHp -= int(self.team2.activePokemon.Stats["HP"] / 8)
-                    print(self.team2.activePokemon.pokemonName + " was hurt by the sun!")
+                    self.drawCurrentText(self.team2.activePokemon.pokemonName + " was hurt by the sun!")
             else:
                 self.weather[0] = "Clear"
-                print("The weather cleared up!")
+                self.drawCurrentText("The weather cleared up!")
         
         if self.terrain[0] != "Clear":
             self.terrain[1] -= 1
             if self.terrain[1] == 0:
                 self.terrain[0] = "Clear"
-                print("The terrain vanished!")
+                self.drawCurrentText("The terrain vanished!")
         
         if self.terrain[0] == "Grassy Terrain":
             if self.team1.activePokemon.Type1.typeName == "Flying" or self.team1.activePokemon.Type2.typeName == "Flying" or self.team1.activePokemon.ability.abilityName == "Levitate":
                 pass
             else:
                 self.team1.activePokemon.currentHp += int(self.team1.activePokemon.Stats["HP"] / 16)
-                print(self.team1.activePokemon.pokemonName + " healed from the Grassy Terrain!")
+                self.drawCurrentText(self.team1.activePokemon.pokemonName + " healed from the Grassy Terrain!")
                 if self.team1.activePokemon.currentHp > self.team1.activePokemon.Stats["HP"]:
                     self.team1.activePokemon.currentHp = self.team1.activePokemon.Stats["HP"]
             if self.team2.activePokemon.Type1.typeName == "Flying" or self.team2.activePokemon.Type2.typeName == "Flying" or self.team2.activePokemon.ability.abilityName == "Levitate":
                 pass
             else:
                 self.team2.activePokemon.currentHp += int(self.team2.activePokemon.Stats["HP"] / 16)
-                print(self.team2.activePokemon.pokemonName + " healed from the Grassy Terrain!")
+                self.drawCurrentText(self.team2.activePokemon.pokemonName + " healed from the Grassy Terrain!")
                 if self.team2.activePokemon.currentHp > self.team2.activePokemon.Stats["HP"]:
                     self.team2.activePokemon.currentHp = self.team2.activePokemon.Stats["HP"]
         
         if self.team1.activePokemon.currentHp <= 0:
             if self.team1.alivePokemon > 0:
                 self.team1.activePokemon.currentHp = 0
-                print(self.team1.activePokemon.pokemonName + " fainted!")
+                self.drawCurrentText(self.team1.activePokemon.pokemonName + " fainted!")
                 self.team1.alivePokemon -= 1
                 if self.team1.alivePokemon > 0:
-                    self.team1.showTeam()
                     while self.team1.activePokemon.currentHp <= 0:
-                        position = int(input("\nWho would you like to switch to? "))
+                        position = int(self.team1.switchMenu())
                         self.team1.Switch(position)
                     self.switchIn(self.team1.activePokemon, self.team2.activePokemon)
         
         if self.team2.activePokemon.currentHp <= 0:
             if self.team2.alivePokemon > 0:
                 self.team2.activePokemon.currentHp = 0
-                print(self.team2.activePokemon.pokemonName + " fainted!") 
+                self.drawCurrentText(self.team2.activePokemon.pokemonName + " fainted!") 
                 self.team2.alivePokemon -= 1
                 if self.team2.alivePokemon > 0:
                     while self.team2.activePokemon.currentHp <= 0:
                          if not computer:
-                             self.team2.showTeam()
-                             position = int(input("\nWho would you like to switch to? "))
+                             position = int(self.team2.switchMenu())
                          else:
                             position = randint(1, 6)
                             while self.team2.pokemonList[position - 1].currentHp <= 0 or self.team2.pokemonList[position - 1] == self.team2.activePokemon:
@@ -2356,23 +3011,25 @@ class Battle():
         if self.team1.reflect > 0:
             self.team1.reflect -= 1
             if self.team1.reflect == 0:
-                print("Your Reflect wore off!")
+                self.drawCurrentText("Your Reflect wore off!")
         if self.team2.reflect > 0:
             self.team2.reflect -= 1
             if self.team2.reflect == 0:
-                print("The opponent's Reflect wore off!")
+                self.drawCurrentText("The opponent's Reflect wore off!")
         if self.team1.lightScreen > 0:
             self.team1.lightScreen -= 1
             if self.team1.lightScreen == 0:
-                print("Your Light Screen wore off!")
+                self.drawCurrentText("Your Light Screen wore off!")
         if self.team2.lightScreen > 0:
             self.team2.lightScreen -= 1
             if self.team2.lightScreen == 0:
-                print("The opponent's Light Screen wore off!")
+                self.drawCurrentText("The opponent's Light Screen wore off!")
+        
+        self.healthBar()
             
         
-def Pokedex(abilityDict, abilityList):
-    infile = pd.read_excel('Pokemon Simulator Stats.xlsx', 'Pokemon')
+def Pokedex(abilityDict, abilityList, sheet):
+    infile = pd.read_excel('Pokemon Simulator Stats.xlsx', sheet)
     
     pokedexDict = {}
     pokemonName = []
@@ -2615,7 +3272,7 @@ def ItemList():
                 
     return itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName
 
-def Megas(pokemonDict, abilityDict, abilityList):
+def Megas(pokemonDict, abilityDict):
     infile = pd.read_excel('Pokemon Simulator Stats.xlsx', 'Mega Pokemon')
     
     pokedexDict = {}
@@ -2629,6 +3286,7 @@ def Megas(pokemonDict, abilityDict, abilityList):
     pokemonSa = []
     pokemonSd = []
     pokemonSp = []
+    pokemonAbility = []
     
     for strName in infile["Pokemon"]:
         pokemonName.append(strName)
@@ -2662,10 +3320,13 @@ def Megas(pokemonDict, abilityDict, abilityList):
         
     for intSp in infile["Speed"]:
         pokemonSp.append(int(intSp))
+        
+    for strAbility in infile["Ability"]:
+        pokemonAbility.append(strAbility)
     
     for pokemonNum in range(len(pokemonName)):
         pokemonObj = Pokemon("Mega " + pokemonName[pokemonNum] + pokemonLabel[pokemonNum], 
-                             abilityDict[choice(abilityList)], pokemonType1[pokemonNum], 
+                             abilityDict[pokemonAbility[pokemonNum]], pokemonType1[pokemonNum], 
                              pokemonType2[pokemonNum])
         pokemonObj.setBaseStat("HP", pokemonDict[pokemonName[pokemonNum]].BaseStats["HP"])
         pokemonObj.setBaseStat("Attack", pokemonAt[pokemonNum])
@@ -2713,14 +3374,18 @@ def Abilities():
     
     return abilityDict, abilityName
 
-def test():
+def battleSimulator():
+    battleWindow = GraphWin("Battle Simulator", 500, 400)
+    battleWindow.setCoords(0, 0, 500, 400)
+    
     abilityDict, abilityList = Abilities()
-    pokemonDict, pokemonList = Pokedex(abilityDict, abilityList)
+    pokemonDict, pokemonList = Pokedex(abilityDict, abilityList, 'Pokemon')
+    #fakemonDict, fakemonList = Pokedex(abilityDict, abilityList, 'Fakemon')
     moveDict, moveList, struggle = MoveList()
     itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName = ItemList()
-    megaDict, megaList = Megas(pokemonDict, abilityDict, abilityList)
+    megaDict, megaList = Megas(pokemonDict, abilityDict)
     
-    '''pokemon1 = copy.deepcopy(pokemonDict["Shedinja"])'''
+    '''pokemon1 = copy.deepcopy(pokemonDict["Camerupt"])'''
     pokemon1 = copy.deepcopy(pokemonDict[choice(pokemonList)])
     pokemon1.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
@@ -2731,7 +3396,7 @@ def test():
                     randint(0, 252), randint(0, 252)])
     pokemon1.Gender()
     '''pokemon1.newMove(copy.deepcopy(moveDict["Focus Energy"]))
-    pokemon1.newMove(copy.deepcopy(moveDict["Stealth Rock"]))'''
+    pokemon1.newMove(copy.deepcopy(moveDict["Close Combat"]))'''
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
     pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
@@ -2746,7 +3411,7 @@ def test():
         pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon1.replaceMove(struggle, 5)
     
-    '''pokemon2 = copy.deepcopy(pokemonDict["Happiny"])'''
+    '''pokemon2 = copy.deepcopy(pokemonDict["Absol"])'''
     pokemon2 = copy.deepcopy(pokemonDict[choice(pokemonList)])
     pokemon2.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
@@ -2816,6 +3481,7 @@ def test():
     pokemon4.replaceMove(struggle, 5)
     
     pokemon5 = copy.deepcopy(pokemonDict[choice(pokemonList)])
+    #pokemon5 = copy.deepcopy(pokemonDict[choice(fakemonList)]) 
     pokemon5.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
             choice(["Attack", "Defense", "Special Attack", "Special Defense", 
@@ -2838,6 +3504,7 @@ def test():
     pokemon5.replaceMove(struggle, 5)
     
     pokemon6 = copy.deepcopy(pokemonDict[choice(pokemonList)])
+    #pokemon6 = copy.deepcopy(pokemonDict[choice(fakemonList)]) 
     pokemon6.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
             choice(["Attack", "Defense", "Special Attack", "Special Defense", 
@@ -2998,8 +3665,6 @@ def test():
     testTeam.addPokemon(pokemon7)
     testTeam.addPokemon(pokemon9)
     testTeam.addPokemon(pokemon11)
-    testTeam.showTeam()
-    print()
     
     testTeam2 = Team()
     testTeam2.addPokemon(pokemon2)
@@ -3008,18 +3673,18 @@ def test():
     testTeam2.addPokemon(pokemon8)
     testTeam2.addPokemon(pokemon10)
     testTeam2.addPokemon(pokemon12)
-    testTeam2.showTeam()
-    print()
     
-    testBattle = Battle(testTeam, testTeam2)
+    testBattle = Battle(testTeam, testTeam2, battleWindow)
     testBattle.typeMatchup()
     testBattle.fixType()
     
     while testTeam.alivePokemon > 0 and testTeam2.alivePokemon > 0:
         testBattle.Turn(megaDict, megaList, True)
         if testTeam.alivePokemon == 0:
-            print("Team 2 wins!")
+            testBattle.drawCurrentText("Team 2 wins!")
         elif testTeam2.alivePokemon == 0:
-            print("Team 1 wins!")
+            testBattle.drawCurrentText("Team 1 wins!")
+    
+    testBattle.win.close()
 
-test()
+battleSimulator()
