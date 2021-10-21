@@ -126,6 +126,7 @@ class Pokemon:
         self.win = win
         
         self.pokemonName = pokemonName
+        self.crunchName = "None"
         self.ability = ability
         self.Type1 = Type(typeName1)
         self.Type2 = Type(typeName2)
@@ -534,7 +535,7 @@ class Team():
                                 self.activePokemon.changeStatus("Badly Poison")
                     if self.entryHazards["Sticky Web"] == 1 and not(self.activePokemon.Type1.typeName == "Flying" or self.activePokemon.Type2.typeName == "Flying" or self.activePokemon.ability.abilityName == "Levitate"):
                         self.drawCurrentText(self.activePokemon.pokemonName + " got caught in a sticky web!")
-                        self.activePokemon.modifyStat("Speed", -1)
+                        self.activePokemon.modifyStat("Speed", "-1")
                     if self.activePokemon.currentHp <= 0:
                         self.drawCurrentText(self.activePokemon + " fainted!")
                         while self.pokemonList[position - 1].currentHp <= 0:
@@ -718,6 +719,12 @@ class Battle():
         self.statusText2 = Text(Point(0,0), "")
         self.pokemon1GenderCircle = Circle(Point(0,0), 0)
         self.pokemon2GenderCircle = Circle(Point(0,0), 0)
+        self.GenderLine11 = Line(Point(0,0), Point(0,0))
+        self.GenderLine12 = Line(Point(0,0), Point(0,0))
+        self.GenderLine13 = Line(Point(0,0), Point(0,0))
+        self.GenderLine21 = Line(Point(0,0), Point(0,0))
+        self.GenderLine22 = Line(Point(0,0), Point(0,0))
+        self.GenderLine23 = Line(Point(0,0), Point(0,0))
         
     def drawCurrentText(self, text):
         self.currentText = Text(Point(250,75), text)
@@ -1232,20 +1239,33 @@ class Battle():
                             move.moveType = Type
     
     def switchIn(self, pokemon1, pokemon2):
+        typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
+                         "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
+                         "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
+                         "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
+                         "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
+                         "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
+        
         if self.team1.activePokemon == pokemon1:
             self.pokemon1Picture.undraw()
             self.pokemon1Name.undraw()
             self.pokemon1CurrentHP.undraw()
             self.pokemon1GenderCircle.undraw()
+            self.GenderLine11.undraw()
+            self.GenderLine12.undraw()
+            self.GenderLine13.undraw()
             
             self.pokemon1Picture = Rectangle(Point(25,160), Point(125,260))
+            self.pokemon1Picture.setFill(color_rgb(typeColorDict[pokemon1.Type1.typeName][0], typeColorDict[pokemon1.Type1.typeName][1], typeColorDict[pokemon1.Type1.typeName][2]))
             self.pokemon1Picture.draw(self.win)
             
             pokemonName1List = self.team1.activePokemon.pokemonName.split(" ")
             if pokemonName1List[0] == "Mega":
                 pokemon1Name = pokemonName1List[1]
-            elif pokemonName1List[0] == "Tapu":
+            elif pokemonName1List[0] in ["Tapu", "Mr.", "Mime", "Type:"]:
                 pokemon1Name = pokemonName1List[0] + " " + pokemonName1List[1]
+            elif not pokemon1.crunchName == "None":
+                pokemon1Name = pokemon1.crunchName
             else:
                 pokemon1Name = pokemonName1List[0]
             self.pokemon1Name = Text(Point(125 + 4 * len(pokemon1Name), 180), pokemon1Name)
@@ -1257,8 +1277,29 @@ class Battle():
                 self.pokemon1GenderCircle.setWidth(2)
                 if pokemon1.gender == "Male":
                     self.pokemon1GenderCircle.setOutline("Blue")
+                    
+                    self.GenderLine11 = Line(Point(230, 180), Point(237, 187))
+                    self.GenderLine11.setFill("Blue")
+                    self.GenderLine11.draw(self.win)
+                    
+                    self.GenderLine12 = Line(Point(233, 187), Point(237, 187))
+                    self.GenderLine12.setFill("Blue")
+                    self.GenderLine12.draw(self.win)
+                    
+                    self.GenderLine13 = Line(Point(237, 183), Point(237, 187))
+                    self.GenderLine13.setFill("Blue")
+                    self.GenderLine13.draw(self.win)
                 else:
                     self.pokemon1GenderCircle.setOutline("Pink")
+                    
+                    self.GenderLine11 = Line(Point(230, 180), Point(230, 170))
+                    self.GenderLine11.setFill("Pink")
+                    self.GenderLine11.draw(self.win)
+                    
+                    self.GenderLine12 = Line(Point(225, 172.5), Point(235, 172.5))
+                    self.GenderLine12.setFill("Pink")
+                    self.GenderLine12.draw(self.win)
+                self.pokemon1GenderCircle.setFill("White")
                 self.pokemon1GenderCircle.draw(self.win)
             
             self.healthBar()
@@ -1268,15 +1309,21 @@ class Battle():
             self.pokemon2Name.undraw()
             self.pokemon2CurrentHP.undraw()
             self.pokemon2GenderCircle.undraw()
+            self.GenderLine21.undraw()
+            self.GenderLine22.undraw()
+            self.GenderLine23.undraw()
             
             self.pokemon2Picture = Rectangle(Point(375,290), Point(475,390))
+            self.pokemon2Picture.setFill(color_rgb(typeColorDict[pokemon1.Type1.typeName][0], typeColorDict[pokemon1.Type1.typeName][1], typeColorDict[pokemon1.Type1.typeName][2]))
             self.pokemon2Picture.draw(self.win)
             
             pokemonName2List = self.team2.activePokemon.pokemonName.split(" ")
             if pokemonName2List[0] == "Mega":
                 pokemon2Name = pokemonName2List[1]
-            elif pokemonName2List[0] == "Tapu":
+            elif pokemonName2List[0] in ["Tapu", "Mr.", "Mime", "Type:"]:
                 pokemon2Name = pokemonName2List[0] + " " + pokemonName2List[1]
+            elif not pokemon1.crunchName == "None":
+                pokemon2Name = pokemon1.crunchName
             else:
                 pokemon2Name = pokemonName2List[0]
             self.pokemon2Name = Text(Point(375 - 4 * len(pokemon2Name), 370), pokemon2Name)
@@ -1288,8 +1335,29 @@ class Battle():
                 self.pokemon2GenderCircle.setWidth(2)
                 if pokemon1.gender == "Male":
                     self.pokemon2GenderCircle.setOutline("Blue")
+                    
+                    self.GenderLine21 = Line(Point(14, 370), Point(21, 377))
+                    self.GenderLine21.setFill("Blue")
+                    self.GenderLine21.draw(self.win)
+                    
+                    self.GenderLine22 = Line(Point(17, 377), Point(21, 377))
+                    self.GenderLine22.setFill("Blue")
+                    self.GenderLine22.draw(self.win)
+                    
+                    self.GenderLine23 = Line(Point(21, 373), Point(21, 377))
+                    self.GenderLine23.setFill("Blue")
+                    self.GenderLine23.draw(self.win)
                 else:
                     self.pokemon2GenderCircle.setOutline("Pink")
+                    
+                    self.GenderLine21 = Line(Point(14, 365), Point(14, 355))
+                    self.GenderLine21.setFill("Pink")
+                    self.GenderLine21.draw(self.win)
+                    
+                    self.GenderLine22 = Line(Point(9, 357.5), Point(19, 357.5))
+                    self.GenderLine22.setFill("Pink")
+                    self.GenderLine22.draw(self.win)
+                self.pokemon2GenderCircle.setFill("White")
                 self.pokemon2GenderCircle.draw(self.win)
             
             self.healthBar()
@@ -3042,6 +3110,7 @@ def Pokedex(abilityDict, abilityList, sheet):
     pokemonSd = []
     pokemonSp = []
     pokemonGender = []
+    pokemonCrunch = []
     
     for strName in infile["Name"]:
         pokemonName.append(strName)
@@ -3082,6 +3151,10 @@ def Pokedex(abilityDict, abilityList, sheet):
                 genderList.append("Female")
         pokemonGender.append(genderList)
         
+    if sheet == "Fakemon":
+        for strCrunch in infile["Crunch Name"]:
+            pokemonCrunch.append(strCrunch)
+        
     for pokemonNum in range(len(pokemonName)):
         pokemonObj = Pokemon(pokemonName[pokemonNum], abilityDict[choice(abilityList)],
                              pokemonType1[pokemonNum], pokemonType2[pokemonNum], 
@@ -3092,6 +3165,8 @@ def Pokedex(abilityDict, abilityList, sheet):
         pokemonObj.setBaseStat("Special Attack", pokemonSa[pokemonNum])
         pokemonObj.setBaseStat("Special Defense", pokemonSd[pokemonNum])
         pokemonObj.setBaseStat("Speed", pokemonSp[pokemonNum])
+        if len(pokemonCrunch) > 0:
+            pokemonObj.crunchName = pokemonCrunch[pokemonNum]
         pokedexDict[pokemonName[pokemonNum]] = pokemonObj
         
     return pokedexDict, pokemonName
@@ -3380,7 +3455,7 @@ def battleSimulator():
     
     abilityDict, abilityList = Abilities()
     pokemonDict, pokemonList = Pokedex(abilityDict, abilityList, 'Pokemon')
-    #fakemonDict, fakemonList = Pokedex(abilityDict, abilityList, 'Fakemon')
+    fakemonDict, fakemonList = Pokedex(abilityDict, abilityList, 'Fakemon')
     moveDict, moveList, struggle = MoveList()
     itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName = ItemList()
     megaDict, megaList = Megas(pokemonDict, abilityDict)
@@ -3480,8 +3555,7 @@ def battleSimulator():
         pokemon4.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon4.replaceMove(struggle, 5)
     
-    pokemon5 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    #pokemon5 = copy.deepcopy(pokemonDict[choice(fakemonList)]) 
+    pokemon5 = copy.deepcopy(fakemonDict[choice(fakemonList)]) 
     pokemon5.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
             choice(["Attack", "Defense", "Special Attack", "Special Defense", 
@@ -3503,8 +3577,7 @@ def battleSimulator():
         pokemon5.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
     pokemon5.replaceMove(struggle, 5)
     
-    pokemon6 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    #pokemon6 = copy.deepcopy(pokemonDict[choice(fakemonList)]) 
+    pokemon6 = copy.deepcopy(fakemonDict[choice(fakemonList)]) 
     pokemon6.setStats(50, choice(["Attack", "Defense", "Special Attack", 
                                  "Special Defense", "Speed"]), 
             choice(["Attack", "Defense", "Special Attack", "Special Defense", 
