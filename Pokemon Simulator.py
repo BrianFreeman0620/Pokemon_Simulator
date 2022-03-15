@@ -17,6 +17,19 @@ def Clicked(bottomLeft, topRight, point):
             return True
     return False
 
+def ClickedCircle(radius, center, point):
+    centerX = center.getX()
+    centerY = center.getY()
+    pointX = point.getX()
+    pointY = point.getY()
+    
+    distance = sqrt( (centerX - pointX) ** 2 + (centerY - pointY) ** 2 )
+    
+    if distance <= radius:
+        return True
+    else:
+        return False
+
 class Type:
     
     def __init__(self, typeName):
@@ -212,7 +225,8 @@ class Pokemon:
                         self.setStats(self.Level, self.plusNature, self.minusNature,
                                       self.IV, self.EV)
                         self.currentHp = tempHp
-                        
+                        self.Type1 = Type(megaDict[self.pokemonName][0].Type1.typeName)
+                        self.Type2 = Type(megaDict[self.pokemonName][0].Type2.typeName)
                         self.ability = megaDict[self.pokemonName][0].ability
                         
                         self.pokemonName = megaDict[self.pokemonName][0].pokemonName
@@ -230,7 +244,8 @@ class Pokemon:
                         self.setStats(self.Level, self.plusNature, self.minusNature,
                                       self.IV, self.EV)
                         self.currentHp = tempHp
-                        
+                        self.Type1 = Type(megaDict[self.pokemonName + " X"][0].Type1.typeName)
+                        self.Type2 = Type(megaDict[self.pokemonName + " X"][0].Type2.typeName)
                         self.ability = megaDict[self.pokemonName + " X"][0].ability
                         
                         self.pokemonName = megaDict[self.pokemonName + " X"][0].pokemonName
@@ -248,7 +263,8 @@ class Pokemon:
                         self.setStats(self.Level, self.plusNature, self.minusNature,
                                       self.IV, self.EV)
                         self.currentHp = tempHp
-                        
+                        self.Type1 = Type(megaDict[self.pokemonName + " Y"][0].Type1.typeName)
+                        self.Type2 = Type(megaDict[self.pokemonName + " Y"][0].Type2.typeName)
                         self.ability = megaDict[self.pokemonName + " Y"][0].ability
                         
                         self.pokemonName = megaDict[self.pokemonName + " Y"][0].pokemonName
@@ -706,8 +722,12 @@ class Battle():
         self.pokemon2HPBar.setWidth(0)
         self.pokemon2HPBar.draw(self.win)
         
-        self.pokemon1Picture = Rectangle(Point(0,0), Point(0,0))
-        self.pokemon2Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon11Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon12Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon21Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon22Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon31Picture = Rectangle(Point(0,0), Point(0,0))
+        self.pokemon32Picture = Rectangle(Point(0,0), Point(0,0))
         self.pokemon1Name = Text(Point(0,0), "")
         self.pokemon2Name = Text(Point(0,0), "")
         
@@ -989,8 +1009,7 @@ class Battle():
             self.forfeitMenu()
             return ["forfeit", 1]
         
-    # Make special attack menu for mega
-    def attackMenu(self, forfeit = False):
+    def attackMenu(self, forfeit = False, megaEvolve = False):
         typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
                          "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
                          "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
@@ -1066,6 +1085,26 @@ class Battle():
             attack4Text.setFill("White")
         attack4Text.draw(self.win)
         
+        if "Mega" in self.team1.activePokemon.item.effect:
+            megaRadius = 40
+            megaCenter = Point(250, 100)
+            megaCircle = Circle(megaCenter, megaRadius)
+            megaText = Text(Point(250, 100), "Mega")
+            if self.team1.mega:
+                megaCircle.setFill("Black")
+                megaText.setFill("White")
+            else:
+                if megaEvolve:
+                    megaCircle.setFill("Blue")    
+                else:
+                    megaCircle.setFill("White")
+                megaText.setFill("Black")
+            megaCircle.draw(self.win)
+            megaText.draw(self.win)
+        else:
+            megaCircle = Circle(Point(0,0), 0)
+            megaText = Text(Point(0, 0), "")
+        
         backBoxBottomLeft = Point(0,0)
         backBoxTopRight = Point(500,50)
         backBox = Rectangle(backBoxBottomLeft, backBoxTopRight)
@@ -1091,6 +1130,8 @@ class Battle():
         attack2Text.undraw()
         attack3Text.undraw()
         attack4Text.undraw()
+        megaCircle.undraw()
+        megaText.undraw()
         backBox.undraw()
         backText.undraw()
         
@@ -1105,28 +1146,34 @@ class Battle():
             if not (self.team1.activePokemon.Moves[move].currentPP <= 0 or (move + 1) in self.team1.activePokemon.volatile["Blocked Moves"]):
                 break
             if move == 5:
-                return ["attack", 5]
+                return ["attack", 5, megaEvolve]
         
+        if "Mega" in self.team1.activePokemon.item.effect and not self.team1.mega:
+            if ClickedCircle(megaRadius, megaCenter, clickedPoint):
+                if not megaEvolve:
+                    return self.attackMenu(False, True)
+                else:
+                    return self.attackMenu()
         if Clicked(attack1BottomLeft, attack1TopRight, clickedPoint):
             if self.team1.activePokemon.Moves[0].currentPP <= 0 or 1 in self.team1.activePokemon.volatile["Blocked Moves"]:
                 return self.attackMenu()
             else:
-                return ["attack", 1]
+                return ["attack", 1, megaEvolve]
         elif Clicked(attack2BottomLeft, attack2TopRight, clickedPoint):
             if self.team1.activePokemon.Moves[1].currentPP <= 0 or 2 in self.team1.activePokemon.volatile["Blocked Moves"]:
                 return self.attackMenu()
             else:
-                return ["attack", 2]
+                return ["attack", 2, megaEvolve]
         elif Clicked(attack3BottomLeft, attack3TopRight, clickedPoint):
             if self.team1.activePokemon.Moves[2].currentPP <= 0 or 3 in self.team1.activePokemon.volatile["Blocked Moves"]:
                 return self.attackMenu()
             else:
-                return ["attack", 3]
+                return ["attack", 3, megaEvolve]
         else:
             if self.team1.activePokemon.Moves[3].currentPP <= 0 or 4 in self.team1.activePokemon.volatile["Blocked Moves"]:
                 return self.attackMenu()
             else:
-                return ["attack", 4]
+                return ["attack", 4, megaEvolve]
     
     def switchMenu(self):
         pokemonColorList = []
@@ -1336,15 +1383,11 @@ class Battle():
                             move.moveType = Type
     
     def switchIn(self, pokemon1, pokemon2):
-        typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
-                         "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
-                         "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
-                         "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
-                         "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
-                         "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
         
         if self.team1.activePokemon == pokemon1:
-            self.pokemon1Picture.undraw()
+            self.pokemon11Picture.undraw()
+            self.pokemon21Picture.undraw()
+            self.pokemon31Picture.undraw()
             self.pokemon1Name.undraw()
             self.pokemon1CurrentHP.undraw()
             self.pokemon1GenderCircle.undraw()
@@ -1353,15 +1396,10 @@ class Battle():
             self.GenderLine13.undraw()
             self.shiny1.undraw()
             
-            self.pokemon1Picture = Rectangle(Point(25,160), Point(125,260))
-            if pokemon1.shiny:
-                self.pokemon1Picture.setFill(color_rgb(252 - typeColorDict[pokemon1.Type1.typeName][0], 252 - typeColorDict[pokemon1.Type1.typeName][1], 252 - typeColorDict[pokemon1.Type1.typeName][2]))
-            else:
-                self.pokemon1Picture.setFill(color_rgb(typeColorDict[pokemon1.Type1.typeName][0], typeColorDict[pokemon1.Type1.typeName][1], typeColorDict[pokemon1.Type1.typeName][2]))
-            if not pokemon1.Type2.typeName == "None":
-                self.pokemon1Picture.setOutline(color_rgb(typeColorDict[pokemon1.Type2.typeName][0], typeColorDict[pokemon1.Type2.typeName][1], typeColorDict[pokemon1.Type2.typeName][2]))
-                self.pokemon1Picture.setWidth(3)
-            self.pokemon1Picture.draw(self.win)
+            self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
+            self.pokemon11Picture.draw(self.win)
+            self.pokemon21Picture.draw(self.win)
+            self.pokemon31Picture.draw(self.win)
             
             pokemonName1List = self.team1.activePokemon.pokemonName.split(" ")
             if pokemonName1List[0] == "Mega":
@@ -1412,7 +1450,9 @@ class Battle():
             self.healthBar()
             
         else:
-            self.pokemon2Picture.undraw()
+            self.pokemon12Picture.undraw()
+            self.pokemon22Picture.undraw()
+            self.pokemon32Picture.undraw()
             self.pokemon2Name.undraw()
             self.pokemon2CurrentHP.undraw()
             self.pokemon2GenderCircle.undraw()
@@ -1420,15 +1460,10 @@ class Battle():
             self.GenderLine22.undraw()
             self.GenderLine23.undraw()
             
-            self.pokemon2Picture = Rectangle(Point(375,290), Point(475,390))
-            if pokemon1.shiny:
-                self.pokemon2Picture.setFill(color_rgb(252 - typeColorDict[pokemon1.Type1.typeName][0], 252 - typeColorDict[pokemon1.Type1.typeName][1], 252 - typeColorDict[pokemon1.Type1.typeName][2]))
-            else:
-                self.pokemon2Picture.setFill(color_rgb(typeColorDict[pokemon1.Type1.typeName][0], typeColorDict[pokemon1.Type1.typeName][1], typeColorDict[pokemon1.Type1.typeName][2]))
-            if not pokemon1.Type2.typeName == "None":
-                self.pokemon2Picture.setOutline(color_rgb(typeColorDict[pokemon1.Type2.typeName][0], typeColorDict[pokemon1.Type2.typeName][1], typeColorDict[pokemon1.Type2.typeName][2]))
-                self.pokemon2Picture.setWidth(3)
-            self.pokemon2Picture.draw(self.win)
+            self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
+            self.pokemon12Picture.draw(self.win)
+            self.pokemon22Picture.draw(self.win)
+            self.pokemon32Picture.draw(self.win)
             
             pokemonName2List = self.team2.activePokemon.pokemonName.split(" ")
             if pokemonName2List[0] == "Mega":
@@ -1584,6 +1619,258 @@ class Battle():
                 elif pokemon1.ability.abilityName == "Shadow Tag":
                     pokemon2.volatile["Block Condition"] = "Mean Look"
                     
+    def pokemonPicture(self, teamNumber, type1, type2, shiny):
+        typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
+                         "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
+                         "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
+                         "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
+                         "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
+                         "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
+        
+        type1Name = type1.typeName
+        if type2.typeName == "None":
+            type2Name = type1.typeName
+        else:
+            type2Name = type2.typeName
+        type1ColorList = typeColorDict[type1Name]
+        type2ColorList = typeColorDict[type2Name]
+        if shiny:
+            type1ColorList = [252 - type1ColorList[0], 252 - type1ColorList[1], 252 - type1ColorList[2]]
+            type2ColorList = [252 - type2ColorList[0], 252 - type2ColorList[1], 252 - type2ColorList[2]]
+        
+        type1Color = color_rgb(type1ColorList[0], type1ColorList[1], type1ColorList[2])
+        type2Color = color_rgb(type2ColorList[0], type2ColorList[1], type2ColorList[2])
+        
+        if type1Name == "Bug":
+            pokemon1Picture = Circle(Point(75,210), 50)
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Line(Point(30, 230), Point(120, 230))
+            pokemon2Picture.setWidth(3)
+            
+            pokemon3Picture = Line(Point(75, 160), Point(75, 230))
+            pokemon3Picture.setWidth(3)
+            
+            if type1Name == type2Name:
+                pokemon2Picture.setFill("Black")
+                pokemon3Picture.setFill("Black")    
+            else:
+                pokemon2Picture.setFill(type1Color)
+                pokemon3Picture.setFill(type1Color)
+        elif type1Name == "Dark":
+            pokemon1Picture = Circle(Point(75,210), 50)
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Circle(Point(75,235), 25)
+            pokemon2Picture.setFill("White")
+            
+            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+        elif type1Name == "Dragon":
+            if teamNumber == 1:
+                pokemon1Picture = Oval(Point(75,200), Point(125, 260))
+                pokemon1Picture.setFill(type2Color)
+                
+                pokemon2Picture = Oval(Point(45,160), Point(105, 230))
+                pokemon2Picture.setFill(type2Color)
+                
+                pokemon3Picture = Polygon(Point(65, 210), Point(65, 250), Point(25, 230), Point(55, 225), Point(30, 220))
+                pokemon3Picture.setFill(type2Color)
+                
+            else:
+                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+                pokemon1Picture.setFill(type2Color)
+                
+                pokemon2Picture = Oval(Point(75,200), Point(25, 260))
+                pokemon2Picture.setFill(type2Color)
+                
+                pokemon3Picture = Polygon(Point(85, 210), Point(85, 250), Point(125, 230), Point(95, 225), Point(120, 220))
+                pokemon3Picture.setFill(type2Color)
+        elif type1Name == "Electric":
+            pokemon1Picture = Polygon(Point(25, 160), Point(110, 230), Point(75, 230), Point(125, 260), Point(95, 260), Point(25, 218), Point(75, 218))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
+            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+        elif type1Name == "Fairy":
+            pokemon1Picture = Circle(Point(100, 235), 25)
+            pokemon1Picture.setFill(type2Color)
+            pokemon1Picture.setOutline(type2Color)
+            
+            pokemon2Picture = Circle(Point(50, 235), 25)
+            pokemon2Picture.setFill(type2Color)
+            pokemon2Picture.setOutline(type2Color)
+            
+            pokemon3Picture =  Polygon(Point(25, 235), Point(125, 235), Point(75, 160))
+            pokemon3Picture.setFill(type2Color)
+            pokemon3Picture.setOutline(type2Color)
+        elif type1Name == "Fighting":
+            pokemon1Picture = Circle(Point(75,210), 40)
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Circle(Point(100,195), 20)
+            pokemon2Picture.setFill(type2Color)
+            pokemon2Picture.setWidth(3)
+
+            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+        elif type1Name == "Fire":
+            pokemon1Picture = Circle(Point(75,200), 40)
+            pokemon1Picture.setFill(type2Color)
+            pokemon1Picture.setOutline(type2Color)
+                
+            pokemon2Picture = Circle(Point(75,190), 30)
+            if type1Name == type2Name:
+                pokemon2Picture.setFill("Yellow")
+                pokemon2Picture.setOutline("Yellow")
+            else:
+                pokemon2Picture.setFill(type1Color)
+                pokemon2Picture.setOutline(type1Color)
+            
+            pokemon3Picture = Polygon(Point(40,190), Point(55,255), Point(65, 225), Point(75, 275), Point(85, 225), Point(95, 255), Point(110, 190), Point(75, 220))
+            pokemon3Picture.setFill(type2Color)
+            pokemon3Picture.setOutline(type2Color)
+        elif type1Name == "Flying":
+            if teamNumber == 1:
+                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+                pokemon1Picture.setFill(type2Color)
+                
+                pokemon2Picture = Oval(Point(75,200), Point(125, 260))
+                pokemon2Picture.setFill(type2Color)
+                
+                pokemon3Picture = Oval(Point(75,180), Point(45, 210))
+                pokemon3Picture.setFill(type2Color)
+                pokemon3Picture.setWidth(2)
+                
+            else:
+                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+                pokemon1Picture.setFill(type2Color)
+                
+                pokemon2Picture = Oval(Point(75,200), Point(25, 260))
+                pokemon2Picture.setFill(type2Color)
+                
+                pokemon3Picture = Oval(Point(75,180), Point(105, 210))
+                pokemon3Picture.setFill(type2Color)
+                pokemon3Picture.setWidth(2)
+        elif type1Name == "Ghost":
+            pokemon1Picture = Circle(Point(75,220), 35)
+            pokemon1Picture.setFill(type2Color)
+            pokemon1Picture.setOutline(type2Color)
+            
+            pokemon2Picture = Circle(Point(75,220), 15)
+            if type1Name == type2Name:    
+                pokemon2Picture.setFill("White")
+            else:
+                pokemon2Picture.setFill(type1Color)
+            
+            pokemon3Picture = Polygon(Point(40, 230), Point(55, 170), Point(65, 195), Point(75, 160), Point(85, 195), Point(95, 170), Point(110, 230), Point(75, 200))
+            pokemon3Picture.setFill(type2Color)
+            pokemon3Picture.setOutline(type2Color)
+        elif type1Name == "Grass":
+            pokemon1Picture = Polygon(Point(35, 160), Point(25, 225), Point(45, 175), Point(50, 200), Point(60, 170), Point(75, 260), Point(90, 170), Point(100, 200), Point(105, 175), Point(125, 225), Point(115, 160))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
+            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+        elif type1Name == "Ground":
+            pokemon1Picture = Polygon(Point(25, 160), Point(50, 230), Point(75, 160))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Polygon(Point(120, 160), Point(100, 220), Point(80, 160))
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Polygon(Point(45, 160), Point(75, 260), Point(105, 160))
+            pokemon3Picture.setFill(type2Color)
+        elif type1Name == "Ice":
+            pokemon1Picture = Polygon(Point(70, 215), Point(75, 260), Point(80, 215), Point(125, 210), Point(80, 205), Point(75, 160), Point(70, 205), Point(25, 210))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Circle(Point(75, 210), 20)
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Circle(Point(75, 210), 10)
+            pokemon3Picture.setFill("White")
+        elif type1Name == "Normal":
+            pokemon1Picture = Circle(Point(75, 210), 50)
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Circle(Point(75, 210), 30)
+            if type1Name == type2Name:
+                pokemon2Picture.setFill("White")    
+            else:
+                pokemon2Picture.setFill(type1Color)
+            
+            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+        elif type1Name == "Poison":
+            pokemon1Picture = Polygon(Point(25, 160), Point(75, 260), Point(125, 160))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Oval(Point(65, 230), Point(85, 190))
+            pokemon3Picture = Circle(Point(75, 175), 10)
+            
+            if type1Name == type2Name:
+                pokemon2Picture.setFill("Black")
+                pokemon3Picture.setFill("Black")
+            else:
+                pokemon2Picture.setFill(type1Color)
+                pokemon3Picture.setFill(type1Color)
+                pokemon2Picture.setOutline(type1Color)
+                pokemon3Picture.setOutline(type1Color)
+        elif type1Name == "Psychic":
+            pokemon1Picture = Oval(Point(25, 180), Point(125, 240))
+            pokemon1Picture.setFill(type1Color)
+            
+            pokemon2Picture = Oval(Point(30, 190), Point(120, 230))
+            pokemon2Picture.setFill("White")
+            
+            pokemon3Picture = Oval(Point(65, 230), Point(85, 190))
+            pokemon3Picture.setFill(type2Color)
+        elif type1Name == "Rock":
+            pokemon1Picture = Polygon(Point(50, 260), Point(100, 260), Point(125, 235), Point(125, 185), Point(100, 160), Point(50, 160), Point(25, 185), Point(25, 235))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Polygon(Point(50, 260), Point(75, 260), Point(100, 235), Point(100, 210), Point(75, 185), Point(50, 185), Point(25, 210), Point(25, 235))
+            pokemon2Picture.setFill(type1Color)
+            
+            pokemon3Picture = Polygon(Point(100, 210), Point(125, 185), Point(100, 160), Point(75,185))
+            pokemon3Picture.setFill(type2Color)
+            if type2Name in ["Dark", "Fighting", "Ghost"]:
+                pokemon3Picture.setOutline("White")
+        elif type1Name == "Steel":
+            pokemon1Picture = Rectangle(Point(25, 160), Point(125, 260))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Rectangle(Point(45, 180), Point(105, 200))
+            pokemon3Picture = Polygon(Point(65, 235), Point(45, 235), Point(45, 215), Point(65, 215), Point(85, 215), Point(85, 235), Point(105, 235), Point(105, 215), Point(65, 215))
+            pokemon2Picture.setOutline(type2Color)
+            pokemon3Picture.setOutline(type2Color)
+            if type1Color == type2Color:
+                pokemon2Picture.setFill("Yellow")
+                pokemon3Picture.setFill("Yellow")
+            else:
+                pokemon2Picture.setFill(type1Color)
+                pokemon3Picture.setFill(type1Color)
+        else:
+            if teamNumber == 1:
+                pokemon1Picture = Oval(Point(50, 170), Point(125, 250))
+                pokemon2Picture = Polygon(Point(50, 210), Point(25, 260), Point(25, 160))   
+                pokemon3Picture = Circle(Point(105, 225), 5)
+            else:
+                pokemon1Picture = Oval(Point(25, 170), Point(100, 250))
+                pokemon2Picture = Polygon(Point(100, 210), Point(125, 260), Point(125, 160))   
+                pokemon3Picture = Circle(Point(45, 225), 5)
+            
+            pokemon1Picture.setFill(type2Color)
+            pokemon2Picture.setFill(type2Color)
+            if type1Color == type2Color:
+                pokemon3Picture.setFill("Black")
+            else:
+                pokemon3Picture.setFill(type1Color)
+            
+        if teamNumber == 2:
+            pokemon1Picture.move(350, 130)
+            pokemon2Picture.move(350, 130)
+            pokemon3Picture.move(350, 130)
+            
+        return pokemon1Picture, pokemon2Picture, pokemon3Picture
     
     def damageCalc(self, moveNumber, playerNum):
         moveNumber -= 1
@@ -2838,10 +3125,12 @@ class Battle():
             player1Choice = "attack"
             team1Move =  self.team1.activePokemon.chargeMove + 1
             priority1 = 0
+            choiceList = ["attack"]
         else:
             player1Choice = "attack"
             team1Move = 1
             priority1 = 0
+            choiceList = ["attack"]
             
         if self.team2.activePokemon.recharge == 0:
             if not computer:
@@ -2881,6 +3170,11 @@ class Battle():
                             damage, unimportant = self.damageCalc(attack + 1, 2)
                             aveDamage += damage
                         aveDamage /= 32
+                        if int(self.team2.activePokemon.Moves[attack].hitTimes[1]) > 1:
+                            if self.team2.activePokemon.ability.abilityName == "Skill Link":
+                                aveDamage *= int(self.team2.activePokemon.Moves[attack].hitTimes[1])
+                            else:
+                                aveDamage *= (int(self.team2.activePokemon.Moves[attack].hitTimes[0]) + int(self.team2.activePokemon.Moves[attack].hitTimes[1]))/2
                         if (self.team2.activePokemon.currentHp >= int(self.team2.activePokemon.Stats["HP"] * .166) or self.team2.activePokemon.currentHp <= int(self.team2.activePokemon.Stats["HP"] * .333)) and self.team2.activePokemon.Moves[attack].moveName in ["Explosion", "Self-Destruct", "Misty Explosion"]:
                             aveDamage = 0
                         strongestAttack[attack + 1] = int(aveDamage/self.team1.activePokemon.Stats["HP"] * 64)
@@ -2968,7 +3262,7 @@ class Battle():
             self.switchIn(self.team2.activePokemon, self.team1.activePokemon)
             self.healthBar()
         
-        if not self.team1.mega and not player1Choice == "switch":
+        if not self.team1.mega and not player1Choice == "switch" and choiceList[-1]:
             self.team1.megaEvolve(megaDict, megaList)
         if not self.team2.mega and not player2Choice == "switch":
             self.team2.megaEvolve(megaDict, megaList)
@@ -3141,11 +3435,11 @@ class Battle():
             if self.team1.activePokemon.currentHp > self.team1.activePokemon.Stats["HP"]:
                 self.team1.activePokemon.currentHp = self.team1.activePokemon.Stats["HP"]
         elif self.team1.activePokemon.volatile["Block Condition"] == "Octolock":
-            if not self.team1.activePokemon.effect[0] == "Clear Body":
+            if not self.team1.activePokemon.ability.effect[0] == "Clear Body":
                 self.team1.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
-            elif self.team1.activePokemon.effect[1] == "Defense":
+            elif self.team1.activePokemon.ability.effect[1] == "Defense":
                 self.team1.activePokemon.modifyStat("Special Defense", "-1")
-            elif self.team1.activePokemon.effect[1] == "All":
+            elif self.team1.activePokemon.ability.effect[1] == "All":
                 pass
             else:
                 self.team1.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
@@ -3171,11 +3465,11 @@ class Battle():
             if self.team2.activePokemon.currentHp > self.team2.activePokemon.Stats["HP"]:
                 self.team2.activePokemon.currentHp = self.team2.activePokemon.Stats["HP"]
         elif self.team2.activePokemon.volatile["Block Condition"] == "Octolock":
-            if not self.team2.activePokemon.effect[0] == "Clear Body":
+            if not self.team2.activePokemon.ability.effect[0] == "Clear Body":
                 self.team2.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
-            elif self.team2.activePokemon.effect[1] == "Defense":
+            elif self.team2.activePokemon.ability.effect[1] == "Defense":
                 self.team2.activePokemon.modifyStat("Special Defense", "-1")
-            elif self.team2.activePokemon.effect[1] == "All":
+            elif self.team2.activePokemon.ability.effect[1] == "All":
                 pass
             else:
                 self.team2.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
@@ -3643,304 +3937,129 @@ def battleSimulator():
     itemDict, itemSpecialtyDict, itemNormalName, itemSpecialtyName = ItemList()
     megaDict, megaList = Megas(pokemonDict, abilityDict)
     
-    '''pokemon1 = copy.deepcopy(pokemonDict["Dusknoir"])'''
-    pokemon1 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon1Total = pokemon1.BaseStats["HP"] + pokemon1.BaseStats["Attack"] + pokemon1.BaseStats["Defense"] + pokemon1.BaseStats["Special Attack"] + pokemon1.BaseStats["Special Defense"] + pokemon1.BaseStats["Speed"]
-    pokemon1.setStats((110 - ceil(pokemon1Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon1.Gender()
-    '''pokemon1.newMove(copy.deepcopy(moveDict["Jaw Lock"]))
-    pokemon1.newMove(copy.deepcopy(moveDict["Close Combat"]))'''
-    pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    '''pokemon1.newItem(itemDict["Mind Plate"])'''
-    if pokemon1.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon1.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon1.pokemonName][signatureItem]))
-    else:
-        pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon1.replaceMove(struggle, 5)
-    
-    '''pokemon2 = copy.deepcopy(pokemonDict["Alakazam"])'''
-    pokemon2 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon2Total = pokemon2.BaseStats["HP"] + pokemon2.BaseStats["Attack"] + pokemon2.BaseStats["Defense"] + pokemon2.BaseStats["Special Attack"] + pokemon2.BaseStats["Special Defense"] + pokemon2.BaseStats["Speed"]
-    pokemon2.setStats((110 - ceil(pokemon2Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon2.Gender()
-    '''pokemon2.newMove(copy.deepcopy(moveDict["Spirit Shackle"]))'''
-    pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon2.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon2.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon2.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon2.newItem(copy.deepcopy(itemSpecialtyDict[pokemon2.pokemonName][signatureItem]))
-    else:
-        '''pokemon2.newItem(copy.deepcopy(itemDict["Choice Scarf"]))'''
-        pokemon2.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon2.replaceMove(struggle, 5)
-    
-    pokemon3 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon3Total = pokemon3.BaseStats["HP"] + pokemon3.BaseStats["Attack"] + pokemon3.BaseStats["Defense"] + pokemon3.BaseStats["Special Attack"] + pokemon3.BaseStats["Special Defense"] + pokemon3.BaseStats["Speed"]
-    pokemon3.setStats((110 - ceil(pokemon3Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon3.Gender()
-    pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon3.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon3.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon3.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon3.newItem(copy.deepcopy(itemSpecialtyDict[pokemon3.pokemonName][signatureItem]))
-    else:
-        pokemon3.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon3.replaceMove(struggle, 5)
-    
-    pokemon4 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon4Total = pokemon4.BaseStats["HP"] + pokemon4.BaseStats["Attack"] + pokemon4.BaseStats["Defense"] + pokemon4.BaseStats["Special Attack"] + pokemon4.BaseStats["Special Defense"] + pokemon4.BaseStats["Speed"]
-    pokemon4.setStats((110 - ceil(pokemon4Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon4.Gender()
-    pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon4.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon4.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon4.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon4.newItem(copy.deepcopy(itemSpecialtyDict[pokemon4.pokemonName][signatureItem]))
-    else:
-        pokemon4.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon4.replaceMove(struggle, 5)
-    
-    pokemon5 = copy.deepcopy(fakemonDict[choice(fakemonList)]) 
-    pokemon5Total = pokemon5.BaseStats["HP"] + pokemon5.BaseStats["Attack"] + pokemon5.BaseStats["Defense"] + pokemon5.BaseStats["Special Attack"] + pokemon5.BaseStats["Special Defense"] + pokemon5.BaseStats["Speed"]
-    pokemon5.setStats((110 - ceil(pokemon5Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon5.Gender()
-    pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon5.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon5.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon5.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon5.newItem(copy.deepcopy(itemSpecialtyDict[pokemon5.pokemonName][signatureItem]))
-    else:
-        pokemon5.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon5.replaceMove(struggle, 5)
-    
-    pokemon6 = copy.deepcopy(fakemonDict[choice(fakemonList)]) 
-    pokemon6Total = pokemon6.BaseStats["HP"] + pokemon6.BaseStats["Attack"] + pokemon6.BaseStats["Defense"] + pokemon6.BaseStats["Special Attack"] + pokemon6.BaseStats["Special Defense"] + pokemon6.BaseStats["Speed"]
-    pokemon6.setStats((110 - ceil(pokemon6Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon6.Gender()
-    pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon6.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon6.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon6.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon6.newItem(copy.deepcopy(itemSpecialtyDict[pokemon6.pokemonName][signatureItem]))
-    else:
-        pokemon6.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon6.replaceMove(struggle, 5)
-    
-    pokemon7 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon7Total = pokemon7.BaseStats["HP"] + pokemon7.BaseStats["Attack"] + pokemon7.BaseStats["Defense"] + pokemon7.BaseStats["Special Attack"] + pokemon7.BaseStats["Special Defense"] + pokemon7.BaseStats["Speed"]
-    pokemon7.setStats((110 - ceil(pokemon7Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon7.Gender()
-    pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon7.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon7.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon7.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon7.newItem(copy.deepcopy(itemSpecialtyDict[pokemon7.pokemonName][signatureItem]))
-    else:
-        pokemon7.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon7.replaceMove(struggle, 5)
-    
-    pokemon8 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon8Total = pokemon8.BaseStats["HP"] + pokemon8.BaseStats["Attack"] + pokemon8.BaseStats["Defense"] + pokemon8.BaseStats["Special Attack"] + pokemon8.BaseStats["Special Defense"] + pokemon8.BaseStats["Speed"]
-    pokemon8.setStats((110 - ceil(pokemon8Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon8.Gender()
-    pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon8.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon8.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon8.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon8.newItem(copy.deepcopy(itemSpecialtyDict[pokemon8.pokemonName][signatureItem]))
-    else:
-        pokemon8.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon8.replaceMove(struggle, 5)
-    
-    pokemon9 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon9Total = pokemon9.BaseStats["HP"] + pokemon9.BaseStats["Attack"] + pokemon9.BaseStats["Defense"] + pokemon9.BaseStats["Special Attack"] + pokemon9.BaseStats["Special Defense"] + pokemon9.BaseStats["Speed"]
-    pokemon9.setStats((110 - ceil(pokemon9Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon9.Gender()
-    pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon9.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon9.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon9.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon9.newItem(copy.deepcopy(itemSpecialtyDict[pokemon9.pokemonName][signatureItem]))
-    else:
-        pokemon9.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon9.replaceMove(struggle, 5)
-    
-    pokemon10 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon10Total = pokemon10.BaseStats["HP"] + pokemon10.BaseStats["Attack"] + pokemon10.BaseStats["Defense"] + pokemon10.BaseStats["Special Attack"] + pokemon10.BaseStats["Special Defense"] + pokemon10.BaseStats["Speed"]
-    pokemon10.setStats((110 - ceil(pokemon10Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon10.Gender()
-    pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon10.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon10.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon10.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon10.newItem(copy.deepcopy(itemSpecialtyDict[pokemon10.pokemonName][signatureItem]))
-    else:
-        pokemon10.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon10.replaceMove(struggle, 5)
-    
-    pokemon11 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon11Total = pokemon11.BaseStats["HP"] + pokemon11.BaseStats["Attack"] + pokemon11.BaseStats["Defense"] + pokemon11.BaseStats["Special Attack"] + pokemon11.BaseStats["Special Defense"] + pokemon11.BaseStats["Speed"]
-    pokemon11.setStats((110 - ceil(pokemon11Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon11.Gender()
-    pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon11.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon11.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon11.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon11.newItem(copy.deepcopy(itemSpecialtyDict[pokemon11.pokemonName][signatureItem]))
-    else:
-        pokemon11.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon11.replaceMove(struggle, 5)
-    
-    pokemon12 = copy.deepcopy(pokemonDict[choice(pokemonList)])
-    pokemon12Total = pokemon12.BaseStats["HP"] + pokemon12.BaseStats["Attack"] + pokemon12.BaseStats["Defense"] + pokemon12.BaseStats["Special Attack"] + pokemon12.BaseStats["Special Defense"] + pokemon12.BaseStats["Speed"]
-    pokemon12.setStats((110 - ceil(pokemon12Total/20)), choice(["Attack", "Defense", "Special Attack", 
-                                 "Special Defense", "Speed"]), 
-            choice(["Attack", "Defense", "Special Attack", "Special Defense", 
-                   "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
-                          randint(0,31), randint(0,31), randint(0,31)], 
-                   [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
-                    randint(0, 252), randint(0, 252)])
-    pokemon12.Gender()
-    pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    pokemon12.newMove(copy.deepcopy(moveDict[choice(moveList)]))
-    if pokemon12.pokemonName in itemSpecialtyDict:
-        signatureItem = choice(itemSpecialtyName)
-        while signatureItem not in itemSpecialtyDict[pokemon12.pokemonName]:
-            signatureItem = choice(itemSpecialtyName)
-        pokemon12.newItem(copy.deepcopy(itemSpecialtyDict[pokemon12.pokemonName][signatureItem]))
-    else:
-        pokemon12.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
-    pokemon12.replaceMove(struggle, 5)
-    
     testTeam = Team()
-    testTeam.addPokemon(pokemon1)
-    testTeam.addPokemon(pokemon3)
-    testTeam.addPokemon(pokemon5)
-    testTeam.addPokemon(pokemon7)
-    testTeam.addPokemon(pokemon9)
-    testTeam.addPokemon(pokemon11)
-    
     testTeam2 = Team()
-    testTeam2.addPokemon(pokemon2)
-    testTeam2.addPokemon(pokemon4)
-    testTeam2.addPokemon(pokemon6)
-    testTeam2.addPokemon(pokemon8)
-    testTeam2.addPokemon(pokemon10)
-    testTeam2.addPokemon(pokemon12)
+    
+    for newPokemon in range(12):
+        move1 = False
+        move2 = False
+        if newPokemon in [3, 4]:
+            pokemon1 = copy.deepcopy(fakemonDict[choice(fakemonList)]) 
+            pokemon1Total = pokemon1.BaseStats["HP"] + pokemon1.BaseStats["Attack"] + pokemon1.BaseStats["Defense"] + pokemon1.BaseStats["Special Attack"] + pokemon1.BaseStats["Special Defense"] + pokemon1.BaseStats["Speed"]
+            pokemon1.setStats((110 - ceil(pokemon1Total/20)), choice(["Attack", "Defense", "Special Attack", 
+                                         "Special Defense", "Speed"]), 
+                    choice(["Attack", "Defense", "Special Attack", "Special Defense", 
+                           "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
+                                  randint(0,31), randint(0,31), randint(0,31)], 
+                           [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
+                            randint(0, 252), randint(0, 252)])
+            pokemon1.Gender()
+            while not move1:
+                move1Choice = copy.deepcopy(moveDict[choice(moveList)])
+                if move1Choice.moveType.typeName == pokemon1.Type1.typeName and move1Choice.power > 0:
+                    move1 = True
+            pokemon1.newMove(move1Choice)
+            if not pokemon1.Type2.typeName == "None":
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if move2Choice.moveType.typeName == pokemon1.Type2.typeName and move2Choice.power > 0:
+                        move2 = True
+            else:
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if not move2Choice.moveType.typeName == pokemon1.Type1.typeName and move2Choice.power > 0:
+                        move2 = True
+            pokemon1.newMove(move2Choice)
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            if pokemon1.pokemonName in itemSpecialtyDict:
+                signatureItem = choice(itemSpecialtyName)
+                while signatureItem not in itemSpecialtyDict[pokemon1.pokemonName]:
+                    signatureItem = choice(itemSpecialtyName)
+                pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon1.pokemonName][signatureItem]))
+            else:
+                pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
+            pokemon1.replaceMove(struggle, 5)
+        elif newPokemon in [10, 11]:
+            pokemon1 = copy.deepcopy(pokemonDict[choice(megaList)])
+            pokemon1Total = pokemon1.BaseStats["HP"] + pokemon1.BaseStats["Attack"] + pokemon1.BaseStats["Defense"] + pokemon1.BaseStats["Special Attack"] + pokemon1.BaseStats["Special Defense"] + pokemon1.BaseStats["Speed"]
+            pokemon1.setStats((105 - ceil(pokemon1Total/20)), choice(["Attack", "Defense", "Special Attack", 
+                                         "Special Defense", "Speed"]), 
+                    choice(["Attack", "Defense", "Special Attack", "Special Defense", 
+                           "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
+                                  randint(0,31), randint(0,31), randint(0,31)], 
+                           [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
+                            randint(0, 252), randint(0, 252)])
+            pokemon1.Gender()
+            while not move1:
+                move1Choice = copy.deepcopy(moveDict[choice(moveList)])
+                if move1Choice.moveType.typeName == pokemon1.Type1.typeName and move1Choice.power > 0:
+                    move1 = True
+            pokemon1.newMove(move1Choice)
+            if not pokemon1.Type2.typeName == "None":
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if move2Choice.moveType.typeName == pokemon1.Type2.typeName and move2Choice.power > 0:
+                        move2 = True
+            else:
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if move2Choice.moveType.typeName == "Normal" and move2Choice.power > 0:
+                        move2 = True
+            pokemon1.newMove(move2Choice)
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            if pokemon1.pokemonName in itemSpecialtyDict:
+                signatureItem = choice(itemSpecialtyName)
+                while signatureItem not in itemSpecialtyDict[pokemon1.pokemonName]:
+                    signatureItem = choice(itemSpecialtyName)
+                pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon1.pokemonName][signatureItem]))
+            else:
+                pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
+            pokemon1.replaceMove(struggle, 5)
+        else:
+            pokemon1 = copy.deepcopy(pokemonDict[choice(pokemonList)])
+            pokemon1Total = pokemon1.BaseStats["HP"] + pokemon1.BaseStats["Attack"] + pokemon1.BaseStats["Defense"] + pokemon1.BaseStats["Special Attack"] + pokemon1.BaseStats["Special Defense"] + pokemon1.BaseStats["Speed"]
+            pokemon1.setStats((110 - ceil(pokemon1Total/20)), choice(["Attack", "Defense", "Special Attack", 
+                                         "Special Defense", "Speed"]), 
+                    choice(["Attack", "Defense", "Special Attack", "Special Defense", 
+                           "Speed"]), [randint(0,31), randint(0,31), randint(0,31),
+                                  randint(0,31), randint(0,31), randint(0,31)], 
+                           [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
+                            randint(0, 252), randint(0, 252)])
+            pokemon1.Gender()
+            while not move1:
+                move1Choice = copy.deepcopy(moveDict[choice(moveList)])
+                if move1Choice.moveType.typeName == pokemon1.Type1.typeName and move1Choice.power > 0:
+                    move1 = True
+            pokemon1.newMove(move1Choice)
+            if not pokemon1.Type2.typeName == "None":
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if move2Choice.moveType.typeName == pokemon1.Type2.typeName and move2Choice.power > 0:
+                        move2 = True
+            else:
+                while not move2:
+                    move2Choice = copy.deepcopy(moveDict[choice(moveList)])
+                    if move2Choice.moveType.typeName == "Normal" and move2Choice.power > 0:
+                        move2 = True
+            pokemon1.newMove(move2Choice)
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            pokemon1.newMove(copy.deepcopy(moveDict[choice(moveList)]))
+            if pokemon1.pokemonName in itemSpecialtyDict:
+                signatureItem = choice(itemSpecialtyName)
+                while signatureItem not in itemSpecialtyDict[pokemon1.pokemonName]:
+                    signatureItem = choice(itemSpecialtyName)
+                pokemon1.newItem(copy.deepcopy(itemSpecialtyDict[pokemon1.pokemonName][signatureItem]))
+            else:
+                pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
+            pokemon1.replaceMove(struggle, 5)
+        
+        if newPokemon%2 == 0:
+            testTeam.addPokemon(pokemon1)
+        else:
+            testTeam2.addPokemon(pokemon1)
+    
     
     testBattle = Battle(testTeam, testTeam2, battleWindow)
     testBattle.typeMatchup()
