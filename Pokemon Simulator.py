@@ -72,7 +72,7 @@ class Move:
             sereneBoost = 1
         
         if success <= self.chance * sereneBoost:
-            if self.stat in ["Flinch", "Confuse", "Trap", "Mean Look", "Octolock", "Ingrain", "Infatuation", "Pumped"]:
+            if self.stat in ["Flinch", "Confuse", "Trap", "Mean Look", "Octolock", "Ingrain", "Infatuation", "Pumped", "Perish"]:
                 return ["Volatile", self.stat, self.target, self.stages]
             elif self.stat in ["Burn", "Sleep", "Freeze", "Paralyze", "Poison",
                                "Rest", "Badly Poison", "Tri Attack", "Healthy"]:
@@ -172,7 +172,8 @@ class Pokemon:
         
         self.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 0, "Trap" : 0,
                          "Block Condition" : "None", "Blocked Moves" : [5], 
-                         "Intangible" : " ", "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0}
+                         "Intangible" : " ", "Substitute" : 0, "Infatuation" : 0, 
+                         "Pumped" : 0, "Perish" : 0}
         
         self.sleepCounter = 0
         
@@ -396,9 +397,10 @@ class Pokemon:
                 status = "Paralyze"
         
         if not(status in self.ability.effect[1] and self.ability.effect[0] == "Immunity" and self.ability.effect[2] == "Status"):  
-            if status in ["Flinch", "Confuse", "Infatuation", "Pumped"]:
-                success = True
-                self.volatile[status] = 1
+            if status in ["Flinch", "Confuse", "Infatuation", "Pumped", "Perish"]:
+                if self.volatile[status] == 0:
+                    success = True
+                    self.volatile[status] = 1
             elif status == "Trap":
                 success = True
                 self.volatile[status] = 4
@@ -451,6 +453,8 @@ class Pokemon:
                 self.drawCurrentText(self.pokemonName + " fell in love!")
             elif status == "Pumped":
                 self.drawCurrentText(self.pokemonName + " is getting pumped!")
+            elif status == "Perish":
+                self.drawCurrentText("All Pokemon that heard this song will faint in 3 turns!")
                 
     def Gender(self):
         self.gender = choice(self.genderRatio)
@@ -511,11 +515,11 @@ class Team():
                 if self.activePokemon.volatile["Badly Poison"] > 0:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 1, "Trap" : 0, 
                                                    "Block Condition" : "None", "Blocked Moves" : [5], "Intangible" : " ", 
-                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0}
+                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0}
                 else:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 0, "Trap" : 0,
                                                    "Block Condition" : "None", "Blocked Moves" : [5], "Intangible" : " ", 
-                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0}
+                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0}
                 self.activePokemon.statModifier = {"Attack" : 1, "Defense" : 1,
                       "Special Attack": 1, "Special Defense": 1, "Speed" : 1, 
                       "Accuracy": 1, "Evasion": 1}
@@ -2635,6 +2639,11 @@ class Battle():
                                         elif statusEffect == "Sleep":
                                             if not self.terrain[0] == "Electric Terrain" and (pokemon1.Type1.typeName == "Flying" or pokemon1.Type2.typeName == "Flying" or pokemon1.ability.abilityName == "Levitate"):
                                                 pokemon2.changeStatus(statusEffect)
+                                        elif statusEffect == "Perish":
+                                            if pokemon1.volatile["Perish"] == 0:
+                                                pokemon1.changeStatus(statusEffect)
+                                            if pokemon2.volatile["Perish"] == 0:
+                                                pokemon2.changeStatus(statusEffect)
                                         else:
                                             pokemon2.changeStatus(statusEffect)
                 elif pokemon1.Moves[moveNumber - 1].moveName == "Substitute" and pokemon1.volatile["Substitute"] >= 0:
@@ -3200,7 +3209,7 @@ class Battle():
                         mostPowerfulMove = powers
                 team2Move = mostPowerfulMove
                 switchChance = randint(1, 4)
-                if strongestAttack[powers] < 8 and self.team2.alivePokemon > 1 and switchChance == 1 and self.team2.activePokemon.volatile["Trap"] == 0 and self.team2.activePokemon.volatile["Block Condition"] == "None":
+                if ((strongestAttack[powers] < 8 and self.team2.alivePokemon > 1 and switchChance == 1) or self.team2.activePokemon.volatile["Perish"] == 4) and self.team2.activePokemon.volatile["Trap"] == 0 and self.team2.activePokemon.volatile["Block Condition"] == "None":
                     player2Choice = "switch"
                     player2SwitchList = []
                     for pokemonSlot in range(6):
@@ -3281,6 +3290,7 @@ class Battle():
             if self.terrain[0] == self.team2.activePokemon.ability.effect[1] and self.team2.activePokemon.ability.effect[0] == "Speed":
                 terrainSpeed /= self.team2.activePokemon.ability.success
         
+        success = 11
         if self.team1.activePokemon.Stats["Speed"] * self.team1.activePokemon.statModifier["Speed"] * pokemon1Para * weatherSpeed * terrainSpeed * scarfSpeed> self.team2.activePokemon.Stats["Speed"] * self.team2.activePokemon.statModifier["Speed"] * pokemon2Para and priority1 >= priority2:
             if player1Choice == "attack":
                 self.Attack(team1Move, priority1, priority2, 1, False, computer)
@@ -3290,9 +3300,11 @@ class Battle():
                             success = 11
                         else:
                             success = randint(1,10)
-                        if success <= self.team2.activePokemon.ability.success:
-                            self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
             if alive2 == self.team2.alivePokemon:
+                if success <= self.team2.activePokemon.ability.success:
+                    self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                    if self.team2.activePokemon.ability.effect[1] == "Perish":
+                        self.team2.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
                 if player2Choice == "attack":
                     self.Attack(team2Move, priority2, priority1, 2, computer)
                     if self.team2.activePokemon.Moves[team2Move - 1].contact:
@@ -3301,8 +3313,11 @@ class Battle():
                                 success = 11
                             else:
                                 success = randint(1,10)
-                            if success <= self.team1.activePokemon.ability.success:
-                                self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                            if alive1 == self.team1.alivePokemon:
+                                if success <= self.team1.activePokemon.ability.success:
+                                    self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                                    if self.team1.activePokemon.ability.effect[1] == "Perish":
+                                        self.team1.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
         elif self.team1.activePokemon.Stats["Speed"] * self.team1.activePokemon.statModifier["Speed"] * pokemon1Para * weatherSpeed * terrainSpeed < self.team2.activePokemon.Stats["Speed"] * self.team2.activePokemon.statModifier["Speed"] * pokemon2Para and priority1 <= priority2:
             if player2Choice == "attack":
                 self.Attack(team2Move, priority2, priority1, 2, computer)
@@ -3312,9 +3327,11 @@ class Battle():
                             success = 11
                         else:
                             success = randint(1,10)
-                        if success <= self.team1.activePokemon.ability.success:
-                            self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
             if alive1 == self.team1.alivePokemon:
+                if success <= self.team1.activePokemon.ability.success:
+                    self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                    if self.team1.activePokemon.ability.effect[1] == "Perish":
+                        self.team1.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
                 if player1Choice == "attack":
                     self.Attack(team1Move, priority1, priority2, 1, False, computer)
                     if self.team1.activePokemon.Moves[team1Move - 1].contact:
@@ -3323,8 +3340,11 @@ class Battle():
                                 success = 11
                             else:
                                 success = randint(1,10)
-                            if success <= self.team2.activePokemon.ability.success:
-                                self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                            if alive2 == self.team2.alivePokemon:
+                                if success <= self.team2.activePokemon.ability.success:
+                                    self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                                    if self.team2.activePokemon.ability.effect[1] == "Perish":
+                                        self.team2.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
         else:
             if priority1 > priority2:
                 speedTie = 1
@@ -3341,9 +3361,11 @@ class Battle():
                                 success = 11
                             else:
                                 success = randint(1,10)
-                            if success <= self.team1.activePokemon.ability.success:
-                                self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
                 if alive1 == self.team1.alivePokemon:
+                    if success <= self.team1.activePokemon.ability.success:
+                        self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                        if self.team1.activePokemon.ability.effect[1] == "Perish":
+                            self.team1.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
                     if player1Choice == "attack":
                         self.Attack(team1Move, priority1, priority2, 1, False, computer)
                         if self.team1.activePokemon.Moves[team1Move - 1].contact:
@@ -3352,8 +3374,11 @@ class Battle():
                                     success = 11
                                 else:
                                     success = randint(1,10)
-                                if success <= self.team2.activePokemon.ability.success:
-                                    self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                                if alive2 == self.team2.alivePokemon:
+                                    if success <= self.team2.activePokemon.ability.success:
+                                        self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                                        if self.team2.activePokemon.ability.effect[1] == "Perish":
+                                            self.team2.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
             else:
                 if player1Choice == "attack":
                     self.Attack(team1Move, priority1, priority2, 1, False, computer)
@@ -3363,9 +3388,11 @@ class Battle():
                                 success = 11
                             else:
                                 success = randint(1,10)
-                            if success <= self.team2.activePokemon.ability.success:
-                                self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
                 if alive2 == self.team2.alivePokemon:
+                    if success <= self.team2.activePokemon.ability.success:
+                        self.team1.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
+                        if self.team2.activePokemon.ability.effect[1] == "Perish":
+                            self.team2.activePokemon.changeStatus(self.team2.activePokemon.ability.effect[1])
                     if player2Choice == "attack":
                         self.Attack(team2Move, priority2, priority1, 2, computer)
                         if self.team2.activePokemon.Moves[team2Move - 1].contact:
@@ -3374,8 +3401,11 @@ class Battle():
                                     success = 11
                                 else:
                                     success = randint(1,10)
-                                if success <= self.team1.activePokemon.ability.success:
-                                    self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                                if alive1 == self.team1.alivePokemon:
+                                    if success <= self.team2.activePokemon.ability.success:
+                                        self.team2.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
+                                        if self.team1.activePokemon.ability.effect[1] == "Perish":
+                                            self.team1.activePokemon.changeStatus(self.team1.activePokemon.ability.effect[1])
         
         if player1Choice == "attack" and self.team1.activePokemon.intangibility:
             if self.team1.activePokemon.Moves[team1Move - 1].moveName in ["Protect", "Detect"]:
@@ -3443,7 +3473,11 @@ class Battle():
                 pass
             else:
                 self.team1.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
-        
+        if self.team1.activePokemon.volatile["Perish"] != 0:
+            self.team1.activePokemon.volatile["Perish"] += 1
+            self.drawCurrentText(self.team1.activePokemon.pokemonName + " perish count is " + str(5 - self.team1.activePokemon.volatile["Perish"]) + "!")
+            if self.team1.activePokemon.volatile["Perish"] == 5:
+                self.team1.activePokemon.currentHp = 0
         if self.team2.activePokemon.status == "Poison":
             if self.team2.activePokemon.volatile["Badly Poison"] > 0:
                 self.team2.activePokemon.currentHp -= ceil(self.team2.activePokemon.Stats["HP"] * (1/16) *
@@ -3473,6 +3507,11 @@ class Battle():
                 pass
             else:
                 self.team2.activePokemon.modifyStat("Defense/Special Defense", "-1/-1")
+        if self.team2.activePokemon.volatile["Perish"] != 0:
+            self.team2.activePokemon.volatile["Perish"] += 1
+            self.drawCurrentText(self.team2.activePokemon.pokemonName + " perish count is " + str(5 - self.team2.activePokemon.volatile["Perish"]) + "!")
+            if self.team2.activePokemon.volatile["Perish"] == 5:
+                self.team2.activePokemon.currentHp = 0
         
         if self.weather[0] != "Clear":
             self.weather[1] -= 1
@@ -3617,7 +3656,7 @@ def Pokedex(abilityDict, abilityList, sheet):
         pokemonSp.append(int(intSp))
         
     for gender in infile["Gender"]:
-        genderRatio = gender.split("/")
+        genderRatio = str(gender).split("/")
         genderList = []
         if len(genderRatio) == 1:
             genderList.append("None")
@@ -4018,6 +4057,7 @@ def battleSimulator():
                 pokemon1.newItem(copy.deepcopy(itemDict[choice(itemNormalName)]))
             pokemon1.replaceMove(struggle, 5)
         else:
+            #pokemon1 = copy.deepcopy(pokemonDict["Eternatus (Eternamax)"])
             pokemon1 = copy.deepcopy(pokemonDict[choice(pokemonList)])
             pokemon1Total = pokemon1.BaseStats["HP"] + pokemon1.BaseStats["Attack"] + pokemon1.BaseStats["Defense"] + pokemon1.BaseStats["Special Attack"] + pokemon1.BaseStats["Special Defense"] + pokemon1.BaseStats["Speed"]
             pokemon1.setStats((110 - ceil(pokemon1Total/20)), choice(["Attack", "Defense", "Special Attack", 
@@ -4028,6 +4068,7 @@ def battleSimulator():
                            [randint(0, 252), randint(0, 252), randint(0, 252), randint(0, 252),
                             randint(0, 252), randint(0, 252)])
             pokemon1.Gender()
+            #move1Choice = copy.deepcopy(moveDict["Perish Song"])
             while not move1:
                 move1Choice = copy.deepcopy(moveDict[choice(moveList)])
                 if move1Choice.moveType.typeName == pokemon1.Type1.typeName and move1Choice.power > 0:
