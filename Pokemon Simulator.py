@@ -187,6 +187,7 @@ class Pokemon:
         self.intangibleOdds = 1
         self.transformed = False
         self.tempPokemon = None
+        self.currentForm = "Base"
         self.gender = "Male"
         self.genderRatio = gender
         self.hiddenPower = "Dark"
@@ -273,6 +274,208 @@ class Pokemon:
                         return True
             
         return False
+    
+    def changeForm(self, weather, activate = False):
+        tempHp = self.currentHp
+        if self.ability.effect[0] == "Specialty":
+            if self.ability.abilityName == "Schooling":
+                if self.currentHp <= floor(.25 * self.Stats["HP"]):
+                    self.setBaseStat("Attack", 20)
+                    self.setBaseStat("Defense", 20)
+                    self.setBaseStat("Special Attack", 25)
+                    self.setBaseStat("Special Defense", 25)
+                    self.setBaseStat("Speed", 40)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Wishiwashi (Solo)"
+                else:
+                    self.setBaseStat("Attack", 140)
+                    self.setBaseStat("Defense", 130)
+                    self.setBaseStat("Special Attack", 140)
+                    self.setBaseStat("Special Defense", 135)
+                    self.setBaseStat("Speed", 30)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Wishiwashi (Schooling)"
+            elif self.ability.abilityName in ["Power Construct", "Shields Down", "Zen Mode"]:
+                if self.currentHp <= floor(.5 * self.Stats["HP"]):
+                    if self.ability.abilityName == "Power Construct":
+                        self.currentForm = "Complete"
+                        currentFullHP = self.Stats["HP"]
+                        self.setBaseStat("HP", 216)
+                        self.setBaseStat("Attack", 100)
+                        self.setBaseStat("Defense", 121)
+                        self.setBaseStat("Special Attack", 91)
+                        self.setBaseStat("Special Defense", 95)
+                        self.setBaseStat("Speed", 85)
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        self.currentHp = int(tempHp * self.Stats["HP"] / currentFullHP)
+                        self.pokemonName = "Zygarde (Complete)"
+                    elif self.ability.abilityName == "Shields Down":
+                        self.setBaseStat("Attack", 100)
+                        self.setBaseStat("Defense", 60)
+                        self.setBaseStat("Special Attack", 100)
+                        self.setBaseStat("Special Defense", 60)
+                        self.setBaseStat("Speed", 120)
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        self.currentHp = tempHp
+                        self.pokemonName = "Minior (Core)"
+                    elif self.ability.abilityName == "Zen Mode":
+                        if self.Type1.typeName == "Ice":
+                            self.setBaseStat("Attack", 160)
+                            self.setBaseStat("Defense", 55)
+                            self.setBaseStat("Special Attack", 30)
+                            self.setBaseStat("Special Defense", 55)
+                            self.setBaseStat("Speed", 135)
+                            self.setStats(self.Level, self.plusNature, self.minusNature,
+                                          self.IV, self.EV)
+                            self.currentHp = tempHp
+                            self.Type2 = Type("Fire")
+                            self.pokemonName = "Darmanitan (Galarian Zen)"
+                        else:
+                            self.setBaseStat("Attack", 30)
+                            self.setBaseStat("Defense", 105)
+                            self.setBaseStat("Special Attack", 140)
+                            self.setBaseStat("Special Defense", 105)
+                            self.setBaseStat("Speed", 55)
+                            self.setStats(self.Level, self.plusNature, self.minusNature,
+                                          self.IV, self.EV)
+                            self.currentHp = tempHp
+                            self.Type2 = Type("Psychic")
+                            self.pokemonName = "Darmanitan (Zen)"
+                else:
+                    if self.ability.abilityName == "Power Construct":
+                        if not self.currentForm == "Complete":
+                            currentFullHP = self.Stats["HP"]
+                            self.setBaseStat("HP", 108)
+                            self.setBaseStat("Attack", 100)
+                            self.setBaseStat("Defense", 121)
+                            self.setBaseStat("Special Attack", 81)
+                            self.setBaseStat("Special Defense", 95)
+                            self.setBaseStat("Speed", 95)
+                            self.setStats(self.Level, self.plusNature, self.minusNature,
+                                          self.IV, self.EV)
+                            self.currentHp = int(tempHp * self.Stats["HP"] / currentFullHP)
+                            self.pokemonName = "Zygarde"
+                    elif self.ability.abilityName == "Shields Down":
+                        self.setBaseStat("Attack", 60)
+                        self.setBaseStat("Defense", 100)
+                        self.setBaseStat("Special Attack", 60)
+                        self.setBaseStat("Special Defense", 100)
+                        self.setBaseStat("Speed", 60)
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        self.currentHp = tempHp
+                        self.pokemonName = "Minior (Meteor)"
+                    elif self.ability.abilityName == "Zen Mode":
+                        self.setBaseStat("Attack", 140)
+                        self.setBaseStat("Defense", 55)
+                        self.setBaseStat("Special Attack", 30)
+                        self.setBaseStat("Special Defense", 55)
+                        self.setBaseStat("Speed", 95)
+                        self.setStats(self.Level, self.plusNature, self.minusNature,
+                                      self.IV, self.EV)
+                        self.currentHp = tempHp
+                        self.Type2 = Type("None")
+                        if self.Type1.typeName == "Ice":
+                            self.pokemonName = "Darmanitan (Galarian)"
+                        else:
+                            self.pokemonName = "Darmanitan"
+            elif self.ability.abilityName == "Battle Bond":
+                if self.currentForm == "Base" and not activate:
+                    self.setBaseStat("Attack", 95)
+                    self.setBaseStat("Defense", 67)
+                    self.setBaseStat("Special Attack", 103)
+                    self.setBaseStat("Special Defense", 71)
+                    self.setBaseStat("Speed", 122)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Greninja"
+                else:
+                    self.currentForm == "Ash"
+                    self.setBaseStat("Attack", 145)
+                    self.setBaseStat("Defense", 67)
+                    self.setBaseStat("Special Attack", 153)
+                    self.setBaseStat("Special Defense", 71)
+                    self.setBaseStat("Speed", 132)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Greninja (Ash)"
+                    self.drawCurrentText("Greninja transformed to Ash Greninja!")
+            elif self.ability.abilityName == "Forecast":
+                if weather == "Sunny Day":
+                    self.Type1 = Type("Fire")
+                    self.pokemonName = "Castform (Sunny)"
+                elif weather == "Rain Dance":
+                    self.Type1 = Type("Water")
+                    self.pokemonName = "Castform (Rainy)"
+                elif weather == "Hail":
+                    self.Type1 = Type("Ice")
+                    self.pokemonName = "Castform (Snowy)"
+                else:
+                    self.Type1 = Type("Normal")
+                    self.pokemonName = "Castform"
+            elif self.ability.abilityName == "Stance Change" and activate:
+                if self.currentForm == "Base":
+                    self.currentForm = "Blade"
+                    self.setBaseStat("Attack", 140)
+                    self.setBaseStat("Defense", 50)
+                    self.setBaseStat("Special Attack", 140)
+                    self.setBaseStat("Special Defense", 50)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Aegislash (Blade)"
+                else:
+                    self.currentForm = "Base"
+                    self.setBaseStat("Attack", 50)
+                    self.setBaseStat("Defense", 140)
+                    self.setBaseStat("Special Attack", 50)
+                    self.setBaseStat("Special Defense", 140)
+                    self.setStats(self.Level, self.plusNature, self.minusNature,
+                                  self.IV, self.EV)
+                    self.currentHp = tempHp
+                    self.pokemonName = "Aegislash (Shield)"
+            elif self.ability.abilityName == "Ice Face":
+                if activate:
+                    self.currentForm = "No Ice"
+                    self.setBaseStat("Defense", 70)
+                    self.setBaseStat("Special Defense", 50)
+                    self.setBaseStat("Speed", 130)
+                    self.currentHP = tempHp
+                    self.pokemonName = "Eiscue (No Ice)"
+                elif weather == "Hail":
+                    self.currentForm = "Base"
+                    self.setBaseStat("Defense", 110)
+                    self.setBaseStat("Special Defense", 90)
+                    self.setBaseStat("Speed", 50)
+                    self.currentHP = tempHp
+                    self.pokemonName = "Eiscue (Ice)"
+            elif self.ability.abilityName == "Gulp Missile" and activate:
+                if self.currentForm == "Base":
+                    if (tempHp/self.Stats["HP"]) > .5:
+                        self.currentForm = "Gulping"
+                    else:
+                        self.currentForm = "Gorging"
+                else:
+                    self.currentForm = "Base"
+            elif self.pokemonName == "Meloetta (Aria)" and activate:
+                self.setBaseStat("Attack", 128)
+                self.setBaseStat("Defense", 90)
+                self.setBaseStat("Special Attack", 77)
+                self.setBaseStat("Special Defense", 77)
+                self.setBaseStat("Speed", 128)
+                self.setStats(self.Level, self.plusNature, self.minusNature,
+                              self.IV, self.EV)
+                self.currentHp = tempHp
+                self.Type2 = Type("Fighting")
+                self.pokemonName = "Meloetta (Pirouette)"
     
     def setStats(self, level, posNature = "HP", negNature = "HP", 
                  IV = [15,15,15,15,15,15], EV = [0,0,0,0,0,0]):
@@ -512,6 +715,8 @@ class Team():
                     self.activePokemon.ability.effect = self.activePokemon.ability.tempAbility[2]
                     self.activePokemon.ability.success = self.activePokemon.ability.tempAbility[3]
                     self.activePokemon.ability.trace = False
+                if self.activePokemon.ability.abilityName == "Stance Change" and self.activePokemon.currentForm == "Blade":
+                    self.activePokemon.changeForm("Unimportant", True)
                 if self.activePokemon.volatile["Badly Poison"] > 0:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 1, "Trap" : 0, 
                                                    "Block Condition" : "None", "Blocked Moves" : [5], "Intangible" : " ", 
@@ -2288,6 +2493,9 @@ class Battle():
             self.lastMove[1] = pokemon1.Moves[moveNumber - 1].moveName
         damage, typeEffect = self.damageCalc(moveNumber, playerNum)
         
+        if ((pokemon1.Moves[moveNumber - 1].power > 0 and pokemon1.currentForm == "Base") or (pokemon1.Moves[moveNumber - 1].moveName == "King's Shield" and pokemon1.currentForm == "Blade")) and pokemon1.ability.abilityName == "Stance Change":
+            pokemon1.changeForm(self.weather[0], True)
+        
         if damage == 0 and pokemon1.Moves[moveNumber - 1].power > 0:
             hit = 0
         elif pokemon2.intangibility:
@@ -2666,6 +2874,8 @@ class Battle():
                             self.drawCurrentText("It started to hail!")
                         elif self.weather[0] == "Sandstorm":
                             self.drawCurrentText("A sandstorm kicked up!")
+                        pokemon1.changeForm(self.weather[0])
+                        pokemon2.changeForm(self.weather[0])
                 elif pokemon1.Moves[moveNumber - 1].stat == "Terrain":
                     if self.terrain[0] != pokemon1.Moves[moveNumber - 1].moveName:
                         if pokemon1.item.itemName == "Terrain Extender":
@@ -2691,12 +2901,26 @@ class Battle():
                     if pokemon2.intangibility:
                         self.drawCurrentText(pokemon2.pokemonName + " is in an intangible state!")
                         healDamage = 0
+                        if oppLastMove in ["King's Shield", "Spiky Shield", "Baneful Bunker"]:
+                            if oppLastMove == "King's Shield":
+                                pokemon1.modifyStat("Attack", "-1")
+                            elif oppLastMove == "Spiky Shield":
+                                healDamage = ceil(pokemon1.Stats["HP"] / -8)
+                            else:
+                                pokemon1.changeStatus("Poison")
                     else:
                         healDamage = (-1) * floor(pokemon1.Stats["HP"] / 4)
                 else:
                     if pokemon2.intangibility and not (pokemon1.Moves[moveNumber - 1].moveName in ["Earthquake", "Magnitude", "Surf", "Whirlpool", "Twister", "Gust", "Thunder", "Hurricane", "Sky Uppercut"] or pokemon1.Moves[moveNumber - 1].feint or (pokemon1.Moves[moveNumber - 1].target == "Self" and pokemon1.Moves[moveNumber - 1].phySpe == "Status")):
                         self.drawCurrentText(pokemon2.pokemonName + " is in an intangible state!")
                         healDamage = 0
+                        if oppLastMove in ["King's Shield", "Spiky Shield", "Baneful Bunker"] and pokemon1.Moves[moveNumber - 1].contact:
+                            if oppLastMove == "King's Shield":
+                                pokemon1.modifyStat("Attack", "-1")
+                            elif oppLastMove == "Spiky Shield":
+                                healDamage = ceil(pokemon1.Stats["HP"] / -8)
+                            else:
+                                pokemon1.changeStatus("Poison")
                     elif typeEffect > 0:
                         if (pokemon1.Moves[moveNumber - 1].moveName in ["Earthquake", "Magnitude", "Surf", "Whirlpool", "Twister", "Gust", "Thunder", "Hurricane", "Sky Uppercut"] or pokemon1.Moves[moveNumber - 1].feint) and pokemon2.intangibility:
                             if pokemon1.Moves[moveNumber - 1].moveName in ["Earthquake", "Magnitude"] and pokemon2.volatile["Intangible"] == "Dig":
@@ -2734,6 +2958,9 @@ class Battle():
                         else:
                             hits = randint(int(pokemon1.Moves[moveNumber - 1].hitTimes[0]), int(pokemon1.Moves[moveNumber - 1].hitTimes[1]))
                         for attackHits in range(hits):
+                            if pokemon2.ability.abilityName == "Ice Face" and pokemon2.currentForm == "Base" and pokemon1.Moves[moveNumber - 1].phySpe == "Physical" and not pokemon1.ability.effect[0] == "Mold Breaker":
+                                damage = 0
+                                pokemon2.changeForm(self.weather[0], True)
                             if pokemon1.Moves[moveNumber - 1].moveType.typeName in pokemon2.item.effect and pokemon2.item.secondEffect == "Defend" and typeEffect > 1 and not pokemon2.item.consumed and not pokemon1.ability.abilityName == "Unnerve":
                                 pokemon2.item.Consume()
                                 itemMult = pokemon2.item.multiplier
@@ -2881,6 +3108,17 @@ class Battle():
                             self.drawCurrentText("It had no effect...")
                         healDamage = 0
                     else:
+                        if pokemon2.ability.abilityName == "Gulp Missile" and not pokemon2.currentForm == "Base":
+                            if pokemon2.currentForm == "Gulping":
+                                pokemon1.modifyStats("Defense", "-1")
+                            else:
+                                pokemon1.changeStatus("Paralyze")
+                            healDamage -= ceil(pokemon2.Stats["HP"] * .25)
+                            pokemon2.changeForm(self.weather[0], True)
+                        if pokemon1.ability.abilityName == "Gulp Missile" and pokemon1.currentForm == "Base" and pokemon1.Moves[moveNumber - 1].moveName in ["Surf", "Dive"]:
+                            pokemon1.changeForm(self.weather[0], True)
+                        elif pokemon1.pokemonName == "Meloetta (Aria)" and pokemon1.Moves[moveNumber - 1].moveName == "Relic Song":
+                            pokemon1.changeForm(self.weather[0], True)
                         if pokemon1.Moves[moveNumber - 1].charge == "Recharge":
                             pokemon1.recharge = 1
                         if typeEffect < 1:
@@ -3016,6 +3254,8 @@ class Battle():
                             pokemon1.modifyStat(statName, "1")
                         else:
                             pokemon1.modifyStat(pokemon1.ability.effect[1], "1")
+                    elif pokemon1.ability.abilityName == "Battle Bond":
+                        pokemon1.changeForm(self.weather[0], True)
                 defendingTeam.alivePokemon -= 1
                 if defendingTeam.alivePokemon > 0:
                      while defendingTeam.activePokemon.currentHp <= 0:
@@ -3072,6 +3312,10 @@ class Battle():
         if self.team1.activePokemon.turnOut == 0 and self.team2.activePokemon.turnOut == 0:
             self.switchIn(self.team1.activePokemon, self.team2.activePokemon)
             self.switchIn(self.team2.activePokemon, self.team1.activePokemon)
+        
+        self.team1.activePokemon.changeForm(self.weather[0])
+        self.team2.activePokemon.changeForm(self.weather[0])
+        self.healthBar()
         
         alive1 = int(self.team1.alivePokemon)
         alive2 = int(self.team2.alivePokemon)
@@ -3609,6 +3853,8 @@ class Battle():
             if self.team2.lightScreen == 0:
                 self.drawCurrentText("The opponent's Light Screen wore off!")
         
+        self.team1.activePokemon.changeForm(self.weather[0])
+        self.team2.activePokemon.changeForm(self.weather[0])
         self.healthBar()
             
         
