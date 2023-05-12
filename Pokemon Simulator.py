@@ -5496,6 +5496,9 @@ def Pokedex(abilityDict, abilitySpecialtyDict, abilityList, sheet):
     pokemonName = []
     pokemonType1 = []
     pokemonType2 = []
+    pokemonAbilityI = []
+    pokemonAbilityII = []
+    pokemonAbilityH = []
     pokemonHp = []
     pokemonAt = []
     pokemonDe = []
@@ -5517,6 +5520,21 @@ def Pokedex(abilityDict, abilitySpecialtyDict, abilityList, sheet):
         if str(strType2) == "nan":
             strType2 = "None"
         pokemonType2.append(strType2)
+        
+    for strAbility in infile["Ability I"]:
+        if str(strAbility) == "nan":
+            strAbility = "None"
+        pokemonAbilityI.append(strAbility)
+        
+    for strAbility in infile["Ability II"]:
+        if str(strAbility) == "nan":
+            strAbility = "None"
+        pokemonAbilityII.append(strAbility)
+        
+    for strAbility in infile["Hidden Ability"]:
+        if str(strAbility) == "nan":
+            strAbility = "None"
+        pokemonAbilityH.append(strAbility)
     
     for intHP in infile["HP"]:
         pokemonHp.append(int(intHP))
@@ -5575,14 +5593,24 @@ def Pokedex(abilityDict, abilitySpecialtyDict, abilityList, sheet):
                              pokemonGender[pokemonNum])
                 specialty = True
         if not specialty:
-            pokemonObj = Pokemon(pokemonName[pokemonNum], abilityDict[choice(abilityList)], 
+            # Checks if pokemon has any abilities in the current abilityList
+            possibleAbilities = []
+            if pokemonAbilityI[pokemonNum] in abilityList:
+                possibleAbilities.append(pokemonAbilityI[pokemonNum])
+            if pokemonAbilityII[pokemonNum] in abilityList:
+                possibleAbilities.append(pokemonAbilityII[pokemonNum])
+            if pokemonAbilityH[pokemonNum] in abilityList:
+                possibleAbilities.append(pokemonAbilityH[pokemonNum])
+            if len(possibleAbilities) == 0:
+                pokemonObj = Pokemon(pokemonName[pokemonNum], abilityDict[choice(abilityList)], 
+                                 pokemonEvolve[pokemonNum], pokemonMass[pokemonNum],
+                                 pokemonType1[pokemonNum], pokemonType2[pokemonNum], 
+                                 pokemonGender[pokemonNum])
+            else:
+                pokemonObj = Pokemon(pokemonName[pokemonNum], abilityDict[choice(possibleAbilities)], 
                              pokemonEvolve[pokemonNum], pokemonMass[pokemonNum],
                              pokemonType1[pokemonNum], pokemonType2[pokemonNum], 
                              pokemonGender[pokemonNum])
-            '''pokemonObj = Pokemon(pokemonName[pokemonNum], abilityDict["Electric Surge"], 
-                             pokemonEvolve[pokemonNum], pokemonMass[pokemonNum],
-                             pokemonType1[pokemonNum], pokemonType2[pokemonNum], 
-                             pokemonGender[pokemonNum])'''
         # Sets the base stats of a pokemon
         pokemonObj.setBaseStat("HP", pokemonHp[pokemonNum])
         pokemonObj.setBaseStat("Attack", pokemonAt[pokemonNum])
