@@ -76,12 +76,14 @@ class Team():
                 if self.activePokemon.volatile["Badly Poison"] > 0:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 1, "Trap" : 0, 
                                                    "Block Condition" : "None", "Blocked Moves" : [5], "Intangible" : " ", 
-                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0, "Drowsy" : 0}
+                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0, 
+                                                   "Drowsy" : 0, "Aqua Ring" : 0}
                 # Resets volatile status conditions
                 else:
                     self.activePokemon.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 0, "Trap" : 0,
                                                    "Block Condition" : "None", "Blocked Moves" : [5], "Intangible" : " ", 
-                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0, "Drowsy" : 0}
+                                                   "Substitute" : 0, "Infatuation" : 0, "Pumped" : 0, "Perish" : 0, 
+                                                   "Drowsy" : 0, "Aqua Ring" : 0}
                 # Resets stat modifiers
                 self.activePokemon.statModifier = {"Attack" : 1, "Defense" : 1,
                       "Special Attack": 1, "Special Defense": 1, "Speed" : 1, 

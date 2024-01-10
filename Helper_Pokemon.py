@@ -1,13 +1,12 @@
 from random import choice
 from math import sqrt
-#from graphics import Point
+from graphics import Circle, color_rgb, Line, Oval, Point, Polygon, Rectangle
 import pandas as pd
 
 from Ability_Pokemon import Ability
 from Item_Pokemon import Item
 from Move_Pokemon import Move, ZMove
 from Class_Pokemon import Pokemon
-#from Type_Pokemon import Type
 
 # Checks if a square is clicked
 def Clicked(bottomLeft, topRight, point):
@@ -55,6 +54,277 @@ def selectPokemon(sheet, number, chosen = []):
         pokemonList.insert(0, choice(pokemonName))
         
     return pokemonList
+
+# Creates a picture using the pokemon's types and shiny value                
+def pokemonPicture(teamNumber, type1, type2, shiny):
+    typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
+                     "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
+                     "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
+                     "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
+                     "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
+                     "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
+    # Saves types as a string
+    type1Name = type1.typeName
+    if type2.typeName == "None":
+        type2Name = type1.typeName
+    else:
+        type2Name = type2.typeName
+    # Picks colors based on types
+    type1ColorList = typeColorDict[type1Name]
+    type2ColorList = typeColorDict[type2Name]
+    if shiny:
+        type1ColorList = [252 - type1ColorList[0], 252 - type1ColorList[1], 252 - type1ColorList[2]]
+        type2ColorList = [252 - type2ColorList[0], 252 - type2ColorList[1], 252 - type2ColorList[2]]
+    type1Color = color_rgb(type1ColorList[0], type1ColorList[1], type1ColorList[2])
+    type2Color = color_rgb(type2ColorList[0], type2ColorList[1], type2ColorList[2])
+    # Bug type
+    if type1Name == "Bug":
+        pokemon1Picture = Circle(Point(75,210), 50)
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Line(Point(30, 230), Point(120, 230))
+        pokemon2Picture.setWidth(3)
+        
+        pokemon3Picture = Line(Point(75, 160), Point(75, 230))
+        pokemon3Picture.setWidth(3)
+        
+        if type1Name == type2Name:
+            pokemon2Picture.setFill("Black")
+            pokemon3Picture.setFill("Black")    
+        else:
+            pokemon2Picture.setFill(type1Color)
+            pokemon3Picture.setFill(type1Color)
+    # Dark type
+    elif type1Name == "Dark":
+        pokemon1Picture = Circle(Point(75,210), 50)
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Circle(Point(75,235), 25)
+        pokemon2Picture.setFill("White")
+        
+        pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+    # Dragon type
+    elif type1Name == "Dragon":
+        if teamNumber == 1:
+            pokemon1Picture = Oval(Point(75,200), Point(125, 260))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Oval(Point(45,160), Point(105, 230))
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Polygon(Point(65, 210), Point(65, 250), Point(25, 230), Point(55, 225), Point(30, 220))
+            pokemon3Picture.setFill(type2Color)
+            
+        else:
+            pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Oval(Point(75,200), Point(25, 260))
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Polygon(Point(85, 210), Point(85, 250), Point(125, 230), Point(95, 225), Point(120, 220))
+            pokemon3Picture.setFill(type2Color)
+    # Electric type
+    elif type1Name == "Electric":
+        pokemon1Picture = Polygon(Point(25, 160), Point(110, 230), Point(75, 230), Point(125, 260), Point(95, 260), Point(25, 218), Point(75, 218))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
+        pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+    # Fairy Type
+    elif type1Name == "Fairy":
+        pokemon1Picture = Circle(Point(100, 235), 25)
+        pokemon1Picture.setFill(type2Color)
+        pokemon1Picture.setOutline(type2Color)
+        
+        pokemon2Picture = Circle(Point(50, 235), 25)
+        pokemon2Picture.setFill(type2Color)
+        pokemon2Picture.setOutline(type2Color)
+        
+        pokemon3Picture =  Polygon(Point(25, 235), Point(125, 235), Point(75, 160))
+        pokemon3Picture.setFill(type2Color)
+        pokemon3Picture.setOutline(type2Color)
+   # Fighting type
+    elif type1Name == "Fighting":
+        pokemon1Picture = Circle(Point(75,210), 40)
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Circle(Point(100,195), 20)
+        pokemon2Picture.setFill(type2Color)
+        pokemon2Picture.setWidth(3)
+
+        pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+    # Fire type
+    elif type1Name == "Fire":
+        pokemon1Picture = Circle(Point(75,200), 40)
+        pokemon1Picture.setFill(type2Color)
+        pokemon1Picture.setOutline(type2Color)
+            
+        pokemon2Picture = Circle(Point(75,190), 30)
+        if type1Name == type2Name:
+            pokemon2Picture.setFill("Yellow")
+            pokemon2Picture.setOutline("Yellow")
+        else:
+            pokemon2Picture.setFill(type1Color)
+            pokemon2Picture.setOutline(type1Color)
+        
+        pokemon3Picture = Polygon(Point(40,190), Point(55,255), Point(65, 225), Point(75, 275), Point(85, 225), Point(95, 255), Point(110, 190), Point(75, 220))
+        pokemon3Picture.setFill(type2Color)
+        pokemon3Picture.setOutline(type2Color)
+    # Flying type
+    elif type1Name == "Flying":
+        if teamNumber == 1:
+            pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Oval(Point(75,200), Point(125, 260))
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Oval(Point(75,180), Point(45, 210))
+            pokemon3Picture.setFill(type2Color)
+            pokemon3Picture.setWidth(2)
+            
+        else:
+            pokemon1Picture = Oval(Point(45,160), Point(105, 230))
+            pokemon1Picture.setFill(type2Color)
+            
+            pokemon2Picture = Oval(Point(75,200), Point(25, 260))
+            pokemon2Picture.setFill(type2Color)
+            
+            pokemon3Picture = Oval(Point(75,180), Point(105, 210))
+            pokemon3Picture.setFill(type2Color)
+            pokemon3Picture.setWidth(2)
+    # Ghost type
+    elif type1Name == "Ghost":
+        pokemon1Picture = Circle(Point(75,220), 35)
+        pokemon1Picture.setFill(type2Color)
+        pokemon1Picture.setOutline(type2Color)
+        
+        pokemon2Picture = Circle(Point(75,220), 15)
+        if type1Name == type2Name:    
+            pokemon2Picture.setFill("White")
+        else:
+            pokemon2Picture.setFill(type1Color)
+        
+        pokemon3Picture = Polygon(Point(40, 230), Point(55, 170), Point(65, 195), Point(75, 160), Point(85, 195), Point(95, 170), Point(110, 230), Point(75, 200))
+        pokemon3Picture.setFill(type2Color)
+        pokemon3Picture.setOutline(type2Color)
+    # Grass type
+    elif type1Name == "Grass":
+        pokemon1Picture = Polygon(Point(35, 160), Point(25, 225), Point(45, 175), Point(50, 200), Point(60, 170), Point(75, 260), Point(90, 170), Point(100, 200), Point(105, 175), Point(125, 225), Point(115, 160))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
+        pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+    # Ground type
+    elif type1Name == "Ground":
+        pokemon1Picture = Polygon(Point(25, 160), Point(50, 230), Point(75, 160))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Polygon(Point(120, 160), Point(100, 220), Point(80, 160))
+        pokemon2Picture.setFill(type2Color)
+        
+        pokemon3Picture = Polygon(Point(45, 160), Point(75, 260), Point(105, 160))
+        pokemon3Picture.setFill(type2Color)
+    # Ice type
+    elif type1Name == "Ice":
+        pokemon1Picture = Polygon(Point(70, 215), Point(75, 260), Point(80, 215), Point(125, 210), Point(80, 205), Point(75, 160), Point(70, 205), Point(25, 210))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Circle(Point(75, 210), 20)
+        pokemon2Picture.setFill(type2Color)
+        
+        pokemon3Picture = Circle(Point(75, 210), 10)
+        pokemon3Picture.setFill("White")
+    # Normal type
+    elif type1Name == "Normal":
+        pokemon1Picture = Circle(Point(75, 210), 50)
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Circle(Point(75, 210), 30)
+        if type1Name == type2Name:
+            pokemon2Picture.setFill("White")    
+        else:
+            pokemon2Picture.setFill(type1Color)
+        
+        pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
+    # Poison type
+    elif type1Name == "Poison":
+        pokemon1Picture = Polygon(Point(25, 160), Point(75, 260), Point(125, 160))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Oval(Point(65, 230), Point(85, 190))
+        pokemon3Picture = Circle(Point(75, 175), 10)
+        
+        if type1Name == type2Name:
+            pokemon2Picture.setFill("Black")
+            pokemon3Picture.setFill("Black")
+        else:
+            pokemon2Picture.setFill(type1Color)
+            pokemon3Picture.setFill(type1Color)
+            pokemon2Picture.setOutline(type1Color)
+            pokemon3Picture.setOutline(type1Color)
+    # Psychic type
+    elif type1Name == "Psychic":
+        pokemon1Picture = Oval(Point(25, 180), Point(125, 240))
+        pokemon1Picture.setFill(type1Color)
+        
+        pokemon2Picture = Oval(Point(30, 190), Point(120, 230))
+        pokemon2Picture.setFill("White")
+        
+        pokemon3Picture = Oval(Point(65, 230), Point(85, 190))
+        pokemon3Picture.setFill(type2Color)
+    # Rock type
+    elif type1Name == "Rock":
+        pokemon1Picture = Polygon(Point(50, 260), Point(100, 260), Point(125, 235), Point(125, 185), Point(100, 160), Point(50, 160), Point(25, 185), Point(25, 235))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Polygon(Point(50, 260), Point(75, 260), Point(100, 235), Point(100, 210), Point(75, 185), Point(50, 185), Point(25, 210), Point(25, 235))
+        pokemon2Picture.setFill(type1Color)
+        
+        pokemon3Picture = Polygon(Point(100, 210), Point(125, 185), Point(100, 160), Point(75,185))
+        pokemon3Picture.setFill(type2Color)
+        if type2Name in ["Dark", "Fighting", "Ghost"]:
+            pokemon3Picture.setOutline("White")
+    # Steel type
+    elif type1Name == "Steel":
+        pokemon1Picture = Rectangle(Point(25, 160), Point(125, 260))
+        pokemon1Picture.setFill(type2Color)
+        
+        pokemon2Picture = Rectangle(Point(45, 180), Point(105, 200))
+        pokemon3Picture = Polygon(Point(65, 235), Point(45, 235), Point(45, 215), Point(65, 215), Point(85, 215), Point(85, 235), Point(105, 235), Point(105, 215), Point(65, 215))
+        pokemon2Picture.setOutline(type2Color)
+        pokemon3Picture.setOutline(type2Color)
+        if type1Color == type2Color:
+            pokemon2Picture.setFill("Yellow")
+            pokemon3Picture.setFill("Yellow")
+        else:
+            pokemon2Picture.setFill(type1Color)
+            pokemon3Picture.setFill(type1Color)
+    # Water type
+    else:
+        if teamNumber == 1:
+            pokemon1Picture = Oval(Point(50, 170), Point(125, 250))
+            pokemon2Picture = Polygon(Point(50, 210), Point(25, 260), Point(25, 160))   
+            pokemon3Picture = Circle(Point(105, 225), 5)
+        else:
+            pokemon1Picture = Oval(Point(25, 170), Point(100, 250))
+            pokemon2Picture = Polygon(Point(100, 210), Point(125, 260), Point(125, 160))   
+            pokemon3Picture = Circle(Point(45, 225), 5)
+        
+        pokemon1Picture.setFill(type2Color)
+        pokemon2Picture.setFill(type2Color)
+        if type1Color == type2Color:
+            pokemon3Picture.setFill("Black")
+        else:
+            pokemon3Picture.setFill(type1Color)
+    # Moves the picture if team 2
+    if teamNumber == 2:
+        pokemon1Picture.move(350, 130)
+        pokemon2Picture.move(350, 130)
+        pokemon3Picture.move(350, 130)
+        
+    return pokemon1Picture, pokemon2Picture, pokemon3Picture
 
 # Imports pokemon from the Excel spreadsheet Pokemon Simulator Stats        
 def Pokedex(pokemonList, megaDict, abilityDict, abilitySpecialtyDict, abilityList, sheet):

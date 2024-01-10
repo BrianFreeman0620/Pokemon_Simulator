@@ -16,8 +16,11 @@ def battleSimulator():
     megaDict, megaList = Megas(abilityDict)
     megaUsed = [choice(megaList), choice(megaList)]
     # Add pokemon to test code
-    #megaUsed.append("Smeargle")
-    #megaUsed.append("Smeargle")
+    #megaUsed.append("Mew")
+    #megaUsed.append("Mew")
+    #megaUsed = []
+    #for i in range(12):
+    #    megaUsed.append("Delibird")    
     pokemonName = selectPokemon("Pokemon", 10, megaUsed)
     pokemonDict, megaDict = Pokedex(pokemonName, megaDict, abilityDict, abilitySpecialtyDict, abilityList, 'Pokemon')
     fakemonDict, fakemonList = Pokedex(pokemonName, megaDict, abilityDict, abilitySpecialtyDict, abilityList, 'Fakemon')
@@ -170,7 +173,7 @@ def battleSimulator():
             while moveName == pokemon1.Moves[0].moveName or moveName == pokemon1.Moves[1].moveName or moveName == pokemon1.Moves[2].moveName:
                 moveName = choice(moveList)
             pokemon1.newMove(copy.deepcopy(moveDict[moveName]))
-            #move1Choice = copy.deepcopy(moveDict["Twister"])
+            #move1Choice = copy.deepcopy(moveDict["Aqua Ring"])
             #pokemon1.newMove(move1Choice)
             #move1Choice = copy.deepcopy(moveDict["Nuzzle"])
             #pokemon1.newMove(move1Choice)

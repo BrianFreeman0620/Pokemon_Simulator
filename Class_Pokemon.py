@@ -58,7 +58,7 @@ class Pokemon:
         self.volatile = {"Flinch" : 0, "Confuse" : 0, "Badly Poison" : 0, "Trap" : 0,
                          "Block Condition" : "None", "Blocked Moves" : [5], 
                          "Intangible" : " ", "Substitute" : 0, "Infatuation" : 0, 
-                         "Pumped" : 0, "Perish" : 0, "Drowsy" : 0}
+                         "Pumped" : 0, "Perish" : 0, "Drowsy" : 0, "Aqua Ring" : 0}
         self.sleepCounter = 0
         # Initializes an item with no effect
         self.item = Item("None", False, "None", "None", 1, 0)
@@ -713,7 +713,7 @@ class Pokemon:
         
         if not(status in self.ability.effect[1] and self.ability.effect[0] == "Immunity" and self.ability.effect[2] == "Status"):  
             # Volatile conditions that do not trap
-            if status in ["Flinch", "Confuse", "Infatuation", "Pumped", "Perish", "Drowsy"]:
+            if status in ["Flinch", "Confuse", "Infatuation", "Pumped", "Perish", "Drowsy", "Aqua Ring"]:
                 if self.volatile[status] == 0:
                     success = True
                     self.volatile[status] = 1

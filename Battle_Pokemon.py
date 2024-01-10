@@ -1,11 +1,10 @@
-from graphics import Circle, color_rgb, Line, Oval, Point, Polygon, Rectangle, Text
+from graphics import Circle, color_rgb, Line, Point, Polygon, Rectangle, Text
 from math import ceil, floor
 from random import choice, randint
 import copy
 
-from Helper_Pokemon import Clicked, ClickedCircle
+from Helper_Pokemon import Clicked, ClickedCircle, pokemonPicture
 from Type_Pokemon import Type
-
 
 # The Battle class is the main class used, with two teams of pokemon and conditions
 # impacting both         
@@ -194,7 +193,7 @@ class Battle():
         self.pokemon1CurrentHP.setWidth(0)
         self.pokemon1CurrentHP.draw(self.win)
         
-        if self.team2.activePokemon.currentHp == self.team2.activePokemon.Stats["HP"]:
+        if self.team2.activePokemon.currentHp >= self.team2.activePokemon.Stats["HP"]:
             currentHPValue = 16
         elif self.team2.activePokemon.currentHp <= self.team2.activePokemon.Stats["HP"] / 16:
             currentHPValue = .5
@@ -281,9 +280,9 @@ class Battle():
             for positionNumber in range(6):
                 if self.team1.pokemonList[positionNumber].currentHp > 0:
                     illusionPokemon = self.team1.pokemonList[positionNumber]
-            self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+            self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
         else:
-            self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, self.team1.activePokemon.Type1, self.team1.activePokemon.Type2, self.team1.activePokemon.shiny)
+            self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, self.team1.activePokemon.Type1, self.team1.activePokemon.Type2, self.team1.activePokemon.shiny)
         self.pokemon11Picture.draw(self.win)
         self.pokemon21Picture.draw(self.win)
         self.pokemon31Picture.draw(self.win)
@@ -291,9 +290,9 @@ class Battle():
             for positionNumber in range(6):
                 if self.team2.pokemonList[positionNumber].currentHp > 0:
                     illusionPokemon = self.team2.pokemonList[positionNumber]
-            self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+            self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
         else:
-            self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, self.team2.activePokemon.Type1, self.team2.activePokemon.Type2, self.team2.activePokemon.shiny)
+            self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, self.team2.activePokemon.Type1, self.team2.activePokemon.Type2, self.team2.activePokemon.shiny)
         self.pokemon12Picture.draw(self.win)
         self.pokemon22Picture.draw(self.win)
         self.pokemon32Picture.draw(self.win)
@@ -882,10 +881,10 @@ class Battle():
                 for positionNumber in range(6):
                     if self.team1.pokemonList[positionNumber].currentHp > 0:
                         illusionPokemon = self.team1.pokemonList[positionNumber]
-                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
                 pokemonName1List = illusionPokemon.pokemonName.split(" ")
             else:
-                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
+                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
                 pokemonName1List = self.team1.activePokemon.pokemonName.split(" ")
             # Draws new pokemon 1
             self.pokemon11Picture.draw(self.win)
@@ -895,9 +894,9 @@ class Battle():
                 for positionNumber in range(6):
                     if self.team2.pokemonList[positionNumber].currentHp > 0:
                         illusionPokemon = self.team2.pokemonList[positionNumber]
-                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
             else:
-                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, pokemon2.Type1, pokemon2.Type2, pokemon2.shiny)
+                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, pokemon2.Type1, pokemon2.Type2, pokemon2.shiny)
             # Redraws new pokemon 2
             self.pokemon12Picture.draw(self.win)
             self.pokemon22Picture.draw(self.win)
@@ -984,9 +983,9 @@ class Battle():
                 for positionNumber in range(6):
                     if self.team1.pokemonList[positionNumber].currentHp > 0:
                         illusionPokemon = self.team1.pokemonList[positionNumber]
-                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
             else:
-                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = self.pokemonPicture(1, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
+                self.pokemon11Picture, self.pokemon21Picture, self.pokemon31Picture = pokemonPicture(1, pokemon1.Type1, pokemon1.Type2, pokemon1.shiny)
             self.pokemon11Picture.draw(self.win)
             self.pokemon21Picture.draw(self.win)
             self.pokemon31Picture.draw(self.win)
@@ -994,10 +993,10 @@ class Battle():
                 for positionNumber in range(6):
                     if self.team2.pokemonList[positionNumber].currentHp > 0:
                         illusionPokemon = self.team2.pokemonList[positionNumber]
-                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
+                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, illusionPokemon.Type1, illusionPokemon.Type2, illusionPokemon.shiny)
                 pokemonName2List = illusionPokemon.pokemonName.split(" ")
             else:
-                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = self.pokemonPicture(2, pokemon2.Type1, pokemon2.Type2, pokemon2.shiny)
+                self.pokemon12Picture, self.pokemon22Picture, self.pokemon32Picture = pokemonPicture(2, pokemon2.Type1, pokemon2.Type2, pokemon2.shiny)
                 pokemonName2List = self.team2.activePokemon.pokemonName.split(" ")
             self.pokemon12Picture.draw(self.win)
             self.pokemon22Picture.draw(self.win)
@@ -1005,10 +1004,10 @@ class Battle():
             if pokemonName2List[0] == "Mega":
                 pokemon2Name = pokemonName2List[1]
             elif pokemonName2List[0] in ["Tapu", "Mr.", "Mime", "Type:", "Iron", "Great", "Scream", "Flutter", "Slither", 
-                                         "Sandy", "Brute", "Roaring", "Walking"]:
+                                         "Sandy", "Brute", "Roaring", "Walking", "Gouging", "Raging"]:
                 pokemon2Name = pokemonName2List[0] + " " + pokemonName2List[1]
-            elif not pokemon2.crunchName == "None":
-                pokemon2Name = pokemon2.crunchName
+            elif not pokemon1.crunchName == "None":
+                pokemon2Name = pokemon1.crunchName
             else:
                 pokemon2Name = pokemonName2List[0]
             self.pokemon2Name = Text(Point(375 - 5 * len(pokemon2Name), 370), pokemon2Name)
@@ -1241,276 +1240,7 @@ class Battle():
                     pokemon2.volatile["Block Condition"] = "Mean Look"
                 elif pokemon1.ability.abilityName == "Shadow Tag":
                     pokemon2.volatile["Block Condition"] = "Mean Look"
-    # Creates a picture using the pokemon's types and shiny value                
-    def pokemonPicture(self, teamNumber, type1, type2, shiny):
-        typeColorDict = {"Bug" : [169,185,28], "Dark" : [0,0,0], "Dragon" : [78,61,153],
-                         "Electric" : [252,188,12], "Fairy" : [245,176,245], "Fighting" : [128,51,27],
-                         "Fire" : [217,48,6], "Flying" : [152,169,245], "Ghost" : [75,75,152],
-                         "Grass" : [81,155,18], "Ground" : [211,179,86], "Ice" : [173,234,254],
-                         "Normal" : [173,165,148], "Poison" : [115,38,117], "Psychic" : [237,69,129],
-                         "Rock" : [158,134,61], "Steel" : [131,131,144], "Water" : [33,132,228]}
-        # Saves types as a string
-        type1Name = type1.typeName
-        if type2.typeName == "None":
-            type2Name = type1.typeName
-        else:
-            type2Name = type2.typeName
-        # Picks colors based on types
-        type1ColorList = typeColorDict[type1Name]
-        type2ColorList = typeColorDict[type2Name]
-        if shiny:
-            type1ColorList = [252 - type1ColorList[0], 252 - type1ColorList[1], 252 - type1ColorList[2]]
-            type2ColorList = [252 - type2ColorList[0], 252 - type2ColorList[1], 252 - type2ColorList[2]]
-        type1Color = color_rgb(type1ColorList[0], type1ColorList[1], type1ColorList[2])
-        type2Color = color_rgb(type2ColorList[0], type2ColorList[1], type2ColorList[2])
-        # Bug type
-        if type1Name == "Bug":
-            pokemon1Picture = Circle(Point(75,210), 50)
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Line(Point(30, 230), Point(120, 230))
-            pokemon2Picture.setWidth(3)
-            
-            pokemon3Picture = Line(Point(75, 160), Point(75, 230))
-            pokemon3Picture.setWidth(3)
-            
-            if type1Name == type2Name:
-                pokemon2Picture.setFill("Black")
-                pokemon3Picture.setFill("Black")    
-            else:
-                pokemon2Picture.setFill(type1Color)
-                pokemon3Picture.setFill(type1Color)
-        # Dark type
-        elif type1Name == "Dark":
-            pokemon1Picture = Circle(Point(75,210), 50)
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Circle(Point(75,235), 25)
-            pokemon2Picture.setFill("White")
-            
-            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
-        # Dragon type
-        elif type1Name == "Dragon":
-            if teamNumber == 1:
-                pokemon1Picture = Oval(Point(75,200), Point(125, 260))
-                pokemon1Picture.setFill(type2Color)
-                
-                pokemon2Picture = Oval(Point(45,160), Point(105, 230))
-                pokemon2Picture.setFill(type2Color)
-                
-                pokemon3Picture = Polygon(Point(65, 210), Point(65, 250), Point(25, 230), Point(55, 225), Point(30, 220))
-                pokemon3Picture.setFill(type2Color)
-                
-            else:
-                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
-                pokemon1Picture.setFill(type2Color)
-                
-                pokemon2Picture = Oval(Point(75,200), Point(25, 260))
-                pokemon2Picture.setFill(type2Color)
-                
-                pokemon3Picture = Polygon(Point(85, 210), Point(85, 250), Point(125, 230), Point(95, 225), Point(120, 220))
-                pokemon3Picture.setFill(type2Color)
-        # Electric type
-        elif type1Name == "Electric":
-            pokemon1Picture = Polygon(Point(25, 160), Point(110, 230), Point(75, 230), Point(125, 260), Point(95, 260), Point(25, 218), Point(75, 218))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
-            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
-        # Fairy Type
-        elif type1Name == "Fairy":
-            pokemon1Picture = Circle(Point(100, 235), 25)
-            pokemon1Picture.setFill(type2Color)
-            pokemon1Picture.setOutline(type2Color)
-            
-            pokemon2Picture = Circle(Point(50, 235), 25)
-            pokemon2Picture.setFill(type2Color)
-            pokemon2Picture.setOutline(type2Color)
-            
-            pokemon3Picture =  Polygon(Point(25, 235), Point(125, 235), Point(75, 160))
-            pokemon3Picture.setFill(type2Color)
-            pokemon3Picture.setOutline(type2Color)
-       # Fighting type
-        elif type1Name == "Fighting":
-            pokemon1Picture = Circle(Point(75,210), 40)
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Circle(Point(100,195), 20)
-            pokemon2Picture.setFill(type2Color)
-            pokemon2Picture.setWidth(3)
-
-            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
-        # Fire type
-        elif type1Name == "Fire":
-            pokemon1Picture = Circle(Point(75,200), 40)
-            pokemon1Picture.setFill(type2Color)
-            pokemon1Picture.setOutline(type2Color)
-                
-            pokemon2Picture = Circle(Point(75,190), 30)
-            if type1Name == type2Name:
-                pokemon2Picture.setFill("Yellow")
-                pokemon2Picture.setOutline("Yellow")
-            else:
-                pokemon2Picture.setFill(type1Color)
-                pokemon2Picture.setOutline(type1Color)
-            
-            pokemon3Picture = Polygon(Point(40,190), Point(55,255), Point(65, 225), Point(75, 275), Point(85, 225), Point(95, 255), Point(110, 190), Point(75, 220))
-            pokemon3Picture.setFill(type2Color)
-            pokemon3Picture.setOutline(type2Color)
-        # Flying type
-        elif type1Name == "Flying":
-            if teamNumber == 1:
-                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
-                pokemon1Picture.setFill(type2Color)
-                
-                pokemon2Picture = Oval(Point(75,200), Point(125, 260))
-                pokemon2Picture.setFill(type2Color)
-                
-                pokemon3Picture = Oval(Point(75,180), Point(45, 210))
-                pokemon3Picture.setFill(type2Color)
-                pokemon3Picture.setWidth(2)
-                
-            else:
-                pokemon1Picture = Oval(Point(45,160), Point(105, 230))
-                pokemon1Picture.setFill(type2Color)
-                
-                pokemon2Picture = Oval(Point(75,200), Point(25, 260))
-                pokemon2Picture.setFill(type2Color)
-                
-                pokemon3Picture = Oval(Point(75,180), Point(105, 210))
-                pokemon3Picture.setFill(type2Color)
-                pokemon3Picture.setWidth(2)
-        # Ghost type
-        elif type1Name == "Ghost":
-            pokemon1Picture = Circle(Point(75,220), 35)
-            pokemon1Picture.setFill(type2Color)
-            pokemon1Picture.setOutline(type2Color)
-            
-            pokemon2Picture = Circle(Point(75,220), 15)
-            if type1Name == type2Name:    
-                pokemon2Picture.setFill("White")
-            else:
-                pokemon2Picture.setFill(type1Color)
-            
-            pokemon3Picture = Polygon(Point(40, 230), Point(55, 170), Point(65, 195), Point(75, 160), Point(85, 195), Point(95, 170), Point(110, 230), Point(75, 200))
-            pokemon3Picture.setFill(type2Color)
-            pokemon3Picture.setOutline(type2Color)
-        # Grass type
-        elif type1Name == "Grass":
-            pokemon1Picture = Polygon(Point(35, 160), Point(25, 225), Point(45, 175), Point(50, 200), Point(60, 170), Point(75, 260), Point(90, 170), Point(100, 200), Point(105, 175), Point(125, 225), Point(115, 160))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture =  Rectangle(Point(0,0), Point(0,0))
-            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
-        # Ground type
-        elif type1Name == "Ground":
-            pokemon1Picture = Polygon(Point(25, 160), Point(50, 230), Point(75, 160))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Polygon(Point(120, 160), Point(100, 220), Point(80, 160))
-            pokemon2Picture.setFill(type2Color)
-            
-            pokemon3Picture = Polygon(Point(45, 160), Point(75, 260), Point(105, 160))
-            pokemon3Picture.setFill(type2Color)
-        # Ice type
-        elif type1Name == "Ice":
-            pokemon1Picture = Polygon(Point(70, 215), Point(75, 260), Point(80, 215), Point(125, 210), Point(80, 205), Point(75, 160), Point(70, 205), Point(25, 210))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Circle(Point(75, 210), 20)
-            pokemon2Picture.setFill(type2Color)
-            
-            pokemon3Picture = Circle(Point(75, 210), 10)
-            pokemon3Picture.setFill("White")
-        # Normal type
-        elif type1Name == "Normal":
-            pokemon1Picture = Circle(Point(75, 210), 50)
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Circle(Point(75, 210), 30)
-            if type1Name == type2Name:
-                pokemon2Picture.setFill("White")    
-            else:
-                pokemon2Picture.setFill(type1Color)
-            
-            pokemon3Picture =  Rectangle(Point(0,0), Point(0,0))
-        # Poison type
-        elif type1Name == "Poison":
-            pokemon1Picture = Polygon(Point(25, 160), Point(75, 260), Point(125, 160))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Oval(Point(65, 230), Point(85, 190))
-            pokemon3Picture = Circle(Point(75, 175), 10)
-            
-            if type1Name == type2Name:
-                pokemon2Picture.setFill("Black")
-                pokemon3Picture.setFill("Black")
-            else:
-                pokemon2Picture.setFill(type1Color)
-                pokemon3Picture.setFill(type1Color)
-                pokemon2Picture.setOutline(type1Color)
-                pokemon3Picture.setOutline(type1Color)
-        # Psychic type
-        elif type1Name == "Psychic":
-            pokemon1Picture = Oval(Point(25, 180), Point(125, 240))
-            pokemon1Picture.setFill(type1Color)
-            
-            pokemon2Picture = Oval(Point(30, 190), Point(120, 230))
-            pokemon2Picture.setFill("White")
-            
-            pokemon3Picture = Oval(Point(65, 230), Point(85, 190))
-            pokemon3Picture.setFill(type2Color)
-        # Rock type
-        elif type1Name == "Rock":
-            pokemon1Picture = Polygon(Point(50, 260), Point(100, 260), Point(125, 235), Point(125, 185), Point(100, 160), Point(50, 160), Point(25, 185), Point(25, 235))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Polygon(Point(50, 260), Point(75, 260), Point(100, 235), Point(100, 210), Point(75, 185), Point(50, 185), Point(25, 210), Point(25, 235))
-            pokemon2Picture.setFill(type1Color)
-            
-            pokemon3Picture = Polygon(Point(100, 210), Point(125, 185), Point(100, 160), Point(75,185))
-            pokemon3Picture.setFill(type2Color)
-            if type2Name in ["Dark", "Fighting", "Ghost"]:
-                pokemon3Picture.setOutline("White")
-        # Steel type
-        elif type1Name == "Steel":
-            pokemon1Picture = Rectangle(Point(25, 160), Point(125, 260))
-            pokemon1Picture.setFill(type2Color)
-            
-            pokemon2Picture = Rectangle(Point(45, 180), Point(105, 200))
-            pokemon3Picture = Polygon(Point(65, 235), Point(45, 235), Point(45, 215), Point(65, 215), Point(85, 215), Point(85, 235), Point(105, 235), Point(105, 215), Point(65, 215))
-            pokemon2Picture.setOutline(type2Color)
-            pokemon3Picture.setOutline(type2Color)
-            if type1Color == type2Color:
-                pokemon2Picture.setFill("Yellow")
-                pokemon3Picture.setFill("Yellow")
-            else:
-                pokemon2Picture.setFill(type1Color)
-                pokemon3Picture.setFill(type1Color)
-        # Water type
-        else:
-            if teamNumber == 1:
-                pokemon1Picture = Oval(Point(50, 170), Point(125, 250))
-                pokemon2Picture = Polygon(Point(50, 210), Point(25, 260), Point(25, 160))   
-                pokemon3Picture = Circle(Point(105, 225), 5)
-            else:
-                pokemon1Picture = Oval(Point(25, 170), Point(100, 250))
-                pokemon2Picture = Polygon(Point(100, 210), Point(125, 260), Point(125, 160))   
-                pokemon3Picture = Circle(Point(45, 225), 5)
-            
-            pokemon1Picture.setFill(type2Color)
-            pokemon2Picture.setFill(type2Color)
-            if type1Color == type2Color:
-                pokemon3Picture.setFill("Black")
-            else:
-                pokemon3Picture.setFill(type1Color)
-        # Moves the picture if team 2
-        if teamNumber == 2:
-            pokemon1Picture.move(350, 130)
-            pokemon2Picture.move(350, 130)
-            pokemon3Picture.move(350, 130)
-            
-        return pokemon1Picture, pokemon2Picture, pokemon3Picture
+    
     # Calculates the damage of an attack
     def damageCalc(self, moveNumber, playerNum, analytic):
         # Shifts the move number over 1
@@ -1584,6 +1314,10 @@ class Battle():
                 pulseType = "Normal"
                 abilityBoost = 1
             moveType = self.getType(pulseType)
+        # Changes Revelation Dance to primary type
+        elif pokemon1.Moves[moveNumber].moveName == "Revelation Dance":
+            moveType = pokemon1.Type1
+            abilityBoost = 1
         # Changes type according to the ability
         elif pokemon1.ability.effect[0] == "Type":
             # -Ate abilities such as Galvanize and Pixilate
@@ -1613,6 +1347,10 @@ class Battle():
                 else:
                     moveType = pokemon1.Moves[moveNumber].moveType
                     abilityBoost = 1
+        # Aura Wheel changes type if Morpeko is Hangry
+        elif pokemon1.currentForm == "Hangry" and pokemon1.Moves[moveNumber].moveName == "Aura Wheel":
+            moveType = self.getType("Dark")
+            abilityBoost = 1
         # Reckless
         elif pokemon1.ability.abilityName == "Reckless" and pokemon1.Moves[moveNumber].healing < 0:
             moveType = pokemon1.Moves[moveNumber].moveType
@@ -1934,9 +1672,20 @@ class Battle():
                 # Calculates power of Crush Grip and Hard Press using 
                 # opponent's remaining HP
                 elif pokemon1.Moves[moveNumber].moveName in ["Crush Grip", "Hard Press"]:
-                    powerMult = pokemon2.currentHP / pokemon2.Stats["HP"]
+                    powerMult = pokemon2.currentHp / pokemon2.Stats["HP"]
                     if powerMult < 1/pokemon1.Moves[moveNumber].power:
                         powerMult = 1/pokemon1.Moves[moveNumber].power
+                # Present can vary in power or heal the opponent
+                elif pokemon1.Moves[moveNumber].moveName == "Present":
+                    presentPower = randint(1, 10)
+                    if presentPower == 1:
+                        powerMult = 3
+                    elif presentPower < 5:
+                        powerMult = 2
+                    elif presentPower < 9:
+                        powerMult = 1
+                    else:
+                        powerMult = 0
                 else:
                     powerMult = 1
                 # Technician boosting weak attacks
@@ -2036,6 +1785,16 @@ class Battle():
                             + 2) * (stab * typeEffect * pokemon1.statModifier["Defense"] /
                                pokemon2StatMult * (randint(85, 100) / 100)
                                * statusMult * itemMult * weatherBoost * abilityBoost))
+                # Calculates damage for Foul Play
+                elif pokemon1.Moves[moveNumber].moveName == "Foul Play":
+                    damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) * pokemon1.Moves[moveNumber].power * powerMult
+                          * (pokemon2.Stats["Attack"]/pokemon2.Stats["Defense"] * abilityAttDef)) / 50) 
+                            + 2) * (stab * typeEffect * pokemon2.statModifier["Attack"] /
+                               pokemon2StatMult * (randint(85, 100) / 100)
+                               * statusMult * itemMult * weatherBoost * abilityBoost))
+                # Present heals the opponent
+                elif pokemon1.Moves[moveNumber].moveName == "Present" and powerMult == 0:
+                    damage = floor(pokemon2.Stats["HP"] * (-1/4))
                 # Calculates damage for attack using multipliers found earlier
                 else:
                     damage = floor((floor(floor(floor(((2 * pokemon1.Level) / 5) + 2) * pokemon1.Moves[moveNumber].power * powerMult
@@ -2117,9 +1876,12 @@ class Battle():
                         powerMult = 0
                 # Calculates power of Wring Out using opponent's remaining HP
                 elif pokemon1.Moves[moveNumber].moveName == "Wring Out":
-                    powerMult = pokemon2.currentHP / pokemon2.Stats["HP"]
+                    powerMult = pokemon2.currentHp / pokemon2.Stats["HP"]
                     if powerMult < 1/pokemon1.Moves[moveNumber].power:
                         powerMult = 1/pokemon1.Moves[moveNumber].power
+                # Brine doubles in power if the opponet has less than half remaining HP
+                elif pokemon1.Moves[moveNumber].moveName == "Brine" and pokemon2.currentHP / pokemon2.Stats["HP"] <= .5:
+                    powerMult = 2
                 else:
                     powerMult = 1
                 if pokemon1.ability.abilityName == "Technician" and pokemon1.Moves[moveNumber].power <= 60:
@@ -2253,7 +2015,7 @@ class Battle():
                                                                                                                                                              "Springtide Storm", "Twister", "Wildbolt Storm"]:
             damage = 0
         # Attacks must do at least 1 damage
-        elif damage < 1 and not damage == 0 and typeEffect > 0:
+        elif damage < 1 and not damage == 0 and typeEffect > 0 and not pokemon1.Moves[moveNumber].moveName in ["Heal Pulse", "Present"]:
             damage = 1
         return damage, typeEffect
     # Pokemon 1 tries to use an attack    
@@ -2393,7 +2155,7 @@ class Battle():
         if pokemon2.ability.abilityName == "Unaware":
             pokemon1Accuracy = 1
         else:
-            pokemon1Accuracy = pokemon2.statModifier["Accuracy"]
+            pokemon1Accuracy = pokemon1.statModifier["Accuracy"]
         # Checks if the attack passes the accuracy test
         if not hit == 141 and (hit <= pokemon1.Moves[moveNumber - 1].accuracy * abilityAccuracy * pokemon1Accuracy / pokemon2Evasion or pokemon1.Moves[moveNumber - 1].accuracy == 101):
             beatStatus = True
@@ -2755,7 +2517,7 @@ class Battle():
                             metronomeMove = moveDict[choice(moveList)]
                             while metronomeMove.moveName in ["After You", "Apple Acid", "Armor Cannon", "Assist", "Astral Barrage", "Aura Wheel",
                                                              "Baneful Bunker", "Beak Blast", "Behemoth Bash", "Behemoth Blasde", "Belch", "Bestow",
-                                                             "Blazing Torque", "Body Press", "Branch Pokemon", "Breaking Swipe", "Celebrate", 
+                                                             "Blazing Torque", "Body Press", "Branch Poke", "Breaking Swipe", "Celebrate", 
                                                              "Chatter", "Chilling Water", "Chilly Reception", "Clangorous Soul", "Collision Course",
                                                              "Combat Torque", "Comeuppance", "Copycat", "Counter", "Covet", "Crafty Shield",
                                                              "Decorate", "Destiny Bond", "Detect", "Diamond Storm", "Doodle", "Double Iron Bash",
@@ -2765,7 +2527,7 @@ class Battle():
                                                              "Glacial Lance", "Grav Apple", "Helping Hands", "Hold Hands", "Hyper Drill",
                                                              "Hyperspace Fury", "Hyperspace Hole", "Ice Burn", "Instruct", "Jet Punch",
                                                              "Jungle Healing", "King's Shield", "Life Dew", "Light of Ruin", "Make it Rain",
-                                                             "Magical Torque", "Mat Block", "Me First", "Meteor Assault", "Mimic", "Mind Blown",
+                                                             "Magical Torque", "Mat Block", "Me First", "Meteor Assault", "Metronome", "Mimic", "Mind Blown",
                                                              "Mirror Coat", "Mirror Move", "Moongeist Beam", "Nature Power", "Nature's Madness",
                                                              "Noxious Torque", "Obstruct", "Order Up", "Origin Pulse", "Overdrive", 
                                                              "Photon Geyser", "Plasma Fists", "Population Bomb", "Pounce", "Power Shift",
@@ -2824,7 +2586,11 @@ class Battle():
                                     pokemon1.Moves[moveNumber - 1].currentPP = pokemon1.Moves[moveNumber - 1].pp
                                     self.drawCurrentText(pokemon1.pokemonName + " sketched the move " + pokemon1.Moves[moveNumber - 1].moveName + "!")
                                     break
-                            
+                        # Genesis Supernova sets Psychic Terrain
+                        elif pokemon1.Moves[moveNumber - 1].stat in ["Electric Terrain", "Grassy Terrain", "Misty Terrain", "Psychic Terrain"]:
+                            if not self.terrain[0] == pokemon1.Moves[moveNumber - 1].stat:
+                                self.terrain = [pokemon1.Moves[moveNumber - 1].stat, 5]
+                                self.drawCurrentText("The terrain became " + pokemon1.Moves[moveNumber - 1].stat + "!")
                         else:
                             # Changes the user's stat
                             pokemon1.modifyStat(secondaryList[1], secondaryList[3], True)
@@ -2869,6 +2635,12 @@ class Battle():
                                 elif pokemon1.Moves[moveNumber - 1].moveName == "Magic Powder" and not pokemon2.ability.abilityName in ["Multitype", "RKS System"]:
                                     pokemon2.changeType("Psychic", "None", False)
                                     self.drawCurrentText(pokemon2.pokemonName + " was powdered and became a Psychic type!")
+                                # Heal Pulse heals the opponent
+                                elif pokemon1.Moves[moveNumber - 1].moveName == "Heal Pulse":
+                                    if pokemon1.ability.abilityName == "Mega Launcher":
+                                        damage = floor(pokemon2.Stats["HP"] * (-3/4))
+                                    else:
+                                        damage = floor(pokemon2.Stats["HP"] * (-1/2))
                                 else:
                                     # Certain abilities prevent stats from being lowered
                                     if not (pokemon2.ability.effect[0] == "Clear Body" and (pokemon2.ability.effect[1] in secondaryList[1] or pokemon2.ability.effect[1] == "All")):
@@ -3499,6 +3271,15 @@ class Battle():
                                           "Special Attack": 1, "Special Defense": 1, 
                                           "Speed" : 1, "Accuracy": 1, "Evasion": 1}
                             self.drawCurrentText(pokemon2.pokemonName + "'s stats have been reset!")
+                        # Freezy Frost resets all stats
+                        elif pokemon1.Moves[moveNumber - 1].moveName == "Freezy Frost":
+                            pokemon1.statModifier = {"Attack" : 1, "Defense" : 1,
+                                          "Special Attack": 1, "Special Defense": 1, 
+                                          "Speed" : 1, "Accuracy": 1, "Evasion": 1}
+                            pokemon2.statModifier = {"Attack" : 1, "Defense" : 1,
+                                          "Special Attack": 1, "Special Defense": 1, 
+                                          "Speed" : 1, "Accuracy": 1, "Evasion": 1}
+                            self.drawCurrentText("All stats have been reset!")
                 # Heals the user        
                 if healDamage > 0:
                     # Liquid Ooze hurts the user instead of heal
@@ -4337,6 +4118,12 @@ class Battle():
             self.team1.activePokemon.volatilw["Drowsy"] -= 1
             if self.team1.activePokemon.volatile["Drowsy"] == 0:
                 self.team1.activePokemon.changeStatus("Sleep")
+        # Aqua Ring heals
+        if self.team1.activePokemon.volatile["Aqua Ring"] == 1:
+            self.team1.activePokemon.currentHp += int(self.team1.activePokemon.Stats["HP"] / 16)
+            self.drawCurrentText(self.team1.activePokemon.pokemonName + " healed from a veil of water!")
+            if self.team1.activePokemon.currentHp > self.team1.activePokemon.Stats["HP"]:
+                self.team1.activePokemon.currentHp = self.team1.activePokemon.Stats["HP"]
         if not self.team2.activePokemon.status == "Healthy":
             if self.team2.activePokemon.ability.abilityName == "Shed Skin":
                 shedSkin = randint(1,3)
@@ -4381,10 +4168,15 @@ class Battle():
             self.drawCurrentText(self.team2.activePokemon.pokemonName + " perish count is " + str(5 - self.team2.activePokemon.volatile["Perish"]) + "!")
             if self.team2.activePokemon.volatile["Perish"] == 5:
                 self.team2.activePokemon.currentHp = 0
-        if self.team1.activePokemon.volatile["Drowsy"] != 0:
-            self.team1.activePokemon.volatilw["Drowsy"] -= 1
-            if self.team1.activePokemon.volatile["Drowsy"] == 0:
-                self.team1.activePokemon.changeStatus("Sleep")
+        if self.team2.activePokemon.volatile["Drowsy"] != 0:
+            self.team2.activePokemon.volatilw["Drowsy"] -= 1
+            if self.team2.activePokemon.volatile["Drowsy"] == 0:
+                self.team2.activePokemon.changeStatus("Sleep")
+        if self.team2.activePokemon.volatile["Aqua Ring"] == 1:
+            self.team2.activePokemon.currentHp += int(self.team2.activePokemon.Stats["HP"] / 16)
+            self.drawCurrentText(self.team2.activePokemon.pokemonName + " healed from a veil of water!")
+            if self.team2.activePokemon.currentHp > self.team2.activePokemon.Stats["HP"]:
+                self.team2.activePokemon.currentHp = self.team2.activePokemon.Stats["HP"]
         # Harvest tries to recover an eaten berry
         if self.team1.activePokemon.ability.abilityName == "Harvest" and "Berry" in self.team1.activePokemon.item.itemName and self.team1.activePokemon.item.consumed:
             if self.weather[0] == "Sunny Day" and not self.cloudNine:
@@ -4592,6 +4384,9 @@ class Battle():
         if not self.cloudNine:
             self.team1.activePokemon.changeForm(self.weather[0], True)
             self.team2.activePokemon.changeForm(self.weather[0], True)
+        # Flinch is not carried over to next turn
+        self.team1.activePokemon.volatile["Flinch"] = 0
+        self.team2.activePokemon.volatile["Flinch"] = 0
         self.healthBar()
     
     # Z Moves are imported to by used by pokemon    
