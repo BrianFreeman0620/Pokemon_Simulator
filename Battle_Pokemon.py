@@ -3126,6 +3126,11 @@ class Battle():
                                 if oppLastMove == "Rage":
                                     self.drawCurrentText(pokemon2.pokemonName + "'s rage is building!")
                                     pokemon2.modifyStat("Attack", "1", True)
+                                # King's Rock's and Razor Fang have a chance to flinch
+                                if pokemon1.item.itemName in ["King's Rock", "Razor Fang"] and not "Flinch" in pokemon1.Moves[moveNumber - 1].stats:
+                                    success = randint(1,10)
+                                    if success == 5:
+                                        pokemon2.changeStatus("Flinch")
                             else:
                                 if pokemon2.ability.effect[0] == "Critical":
                                     if pokemon2.ability.effect[1] == "Immunity" and not pokemon1.ability.effect[0] == "Mold Breaker":
@@ -3190,7 +3195,7 @@ class Battle():
                         # Gukp Missile hits the opponent
                         if pokemon2.ability.abilityName == "Gulp Missile" and not pokemon2.currentForm == "Base":
                             if pokemon2.currentForm == "Gulping":
-                                pokemon1.modifyStat("Defense", "-1")
+                                pokemon1.modifyStat("Defense", "-1", False)
                             elif pokemon2.currentForm == "Gorging" and not (pokemon1.ability.abilityName == "Leaf Guard" and self.weather[0] == "Sunny Day"):
                                 pokemon1.changeStatus("Paralyze")
                                 if pokemon2.ability.abilityName == "Synchronize" and pokemon1.status == "Healthy":
@@ -3223,27 +3228,38 @@ class Battle():
                         if pokemon1.Moves[moveNumber - 1].moveName == "Fling":       
                             if not (pokemon1.item.consumed or pokemon1.item.fling == 0):
                                 self.drawCurrentText(pokemon1.pokemonName + " flung its " + pokemon1.item.itemName + "!")
+                                if pokemon1.item.itemName in ["Flame Orb", "King's Rock", "Light Ball", "Poison Barb", "Razor Fang", "Toxic Orb"]:
+                                    if pokemon1.item.itemName == "Flame Orb":
+                                        pokemon2.changeStatus("Burn")
+                                    elif pokemon1.item.itemName in ["King's Rock", "Razor Fang"]:
+                                        pokemon2.changeStatus("Flinch")
+                                    elif pokemon1.item.itemName == "Light Ball":
+                                        pokemon2.changeStatus("Paralyze")
+                                    elif pokemon1.item.itemName == "Poison Barb":
+                                        pokemon2.changeStatus("Poison")
+                                    elif pokemon1.item.itemName == "Toxic Orb":
+                                        pokemon2.changeStatus("Badly Poison")
+                                itemDamage = False
+                                if "Damage" in pokemon2.item.effect:
+                                    if pokemon2.item.consumable:
+                                        if pokemon2.item.secondEffect == pokemon1.Moves[moveNumber - 1].phySpe and not pokemon2.item.consumed and not (pokemon1.ability.abilityName == "Unnerve" or "As One" in pokemon1.ability.abilityName):
+                                            pokemon2.item.Consume()
+                                            itemDamage = True
+                                            # Cheek Pouch heals after eating a berry
+                                            if pokemon2.ability.abilityName == "Cheek Pouch":
+                                                pokemon2.currentHp += ceil(pokemon2.Stats["HP"] * (1/3))
+                                                if pokemon2.currentHp > pokemon2.Stats["HP"]:
+                                                    pokemon2.currentHp = pokemon2.Stats["HP"]
+                                    else:
+                                        if pokemon1.Moves[moveNumber - 1].contact and not (pokemon1.ability.abilityName == "Long Reach" or pokemon1.item.itemName in ["Punching Glove", "Protective Pads"]):
+                                            itemDamage = True
+                                if itemDamage:
+                                    pokemon1.currentHp -= round(pokemon1.Stats["HP"] * pokemon2.item.multiplier)
+                                    self.drawCurrentText(pokemon1.pokemonName + " was hurt by " + pokemon2.item.itemName + "!")
                                 pokemon1.item.Consume()
                             else:
                                 self.drawCurrentText(pokemon1.pokemonName + " failed to fling a thing!")
                             
-                            itemDamage = False
-                            if "Damage" in pokemon2.item.effect:
-                                if pokemon2.item.consumable:
-                                    if pokemon2.item.secondEffect == pokemon1.Moves[moveNumber - 1].phySpe and not pokemon2.item.consumed and not (pokemon1.ability.abilityName == "Unnerve" or "As One" in pokemon1.ability.abilityName):
-                                        pokemon2.item.Consume()
-                                        itemDamage = True
-                                        # Cheek Pouch heals after eating a berry
-                                        if pokemon2.ability.abilityName == "Cheek Pouch":
-                                            pokemon2.currentHp += ceil(pokemon2.Stats["HP"] * (1/3))
-                                            if pokemon2.currentHp > pokemon2.Stats["HP"]:
-                                                pokemon2.currentHp = pokemon2.Stats["HP"]
-                                else:
-                                    if pokemon1.Moves[moveNumber - 1].contact and not (pokemon1.ability.abilityName == "Long Reach" or pokemon1.item.itemName in ["Punching Glove", "Protective Pads"]):
-                                        itemDamage = True
-                            if itemDamage:
-                                pokemon1.currentHp -= round(pokemon1.Stats["HP"] * pokemon2.item.multiplier)
-                                self.drawCurrentText(pokemon1.pokemonName + " was hurt by " + pokemon2.item.itemName + "!")
                         # Volt Switch, U-Turn, and Flip Turn switches with a party member    
                         elif (pokemon1.Moves[moveNumber - 1].moveName in ["Volt Switch", "U-turn", "Flip Turn"] or pokemon1.currentHp < 1) and attackingTeam.alivePokemon > 1:
                             if not computer:
@@ -4361,6 +4377,15 @@ class Battle():
             self.team2.lightScreen -= 1
             if self.team2.lightScreen == 0:
                 self.drawCurrentText("The opponent's Light Screen wore off!")
+        # Toxic Orb and Flame Orb status holder
+        if self.team1.activePokemon.item.itemName == "Flame Orb":
+            self.team1.activePokemon.changeStatus("Burn")
+        elif self.team1.activePokemon.item.itemName == "Toxic Orb":
+            self.team1.activePokemon.changeStatus("Badly Poison")
+        if self.team2.activePokemon.item.itemName == "Flame Orb":
+            self.team2.activePokemon.changeStatus("Burn")
+        elif self.team2.activePokemon.item.itemName == "Toxic Orb":
+            self.team2.activePokemon.changeStatus("Badly Poison")
         # Protect stops making the user intangible
         if self.team1.activePokemon.volatile["Intangible"] == "Protect":
             self.team1.activePokemon.volatile["Intangible"] == " "
