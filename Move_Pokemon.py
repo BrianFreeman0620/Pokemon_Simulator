@@ -55,7 +55,8 @@ class Move:
             if self.stat in ["Flinch", "Confuse", "Trap", "Mean Look", "Octolock", "Ingrain", "Infatuation", "Pumped", "Perish", "Drowsy", "Aqua Ring"]:
                 return ["Volatile", self.stat, self.target, self.stages]
             elif self.stat in ["Burn", "Sleep", "Freeze", "Paralyze", "Poison",
-                               "Rest", "Badly Poison", "Tri Attack", "Dire Claw", "Healthy"]:
+                               "Rest", "Badly Poison", "Tri Attack", "Dire Claw", 
+                               "Heal Bell","Healthy"]:
                 return ["Status", self.stat, self.target, self.stages]
             else:
                 return ["Stat", self.stat, self.target, self.stages]

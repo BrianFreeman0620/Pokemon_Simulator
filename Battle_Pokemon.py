@@ -1517,6 +1517,8 @@ class Battle():
                         weatherBoost = .5
                     else:
                         weatherBoost = 1
+                    if (pokemon2.Type1.typeName == "Ice" or pokemon2.Type2.typeName == "Ice") and pokemon1.Moves[moveNumber].phySpe == "Physical":
+                        weatherBoost /= 1.5
                 # Sandstorm
                 elif self.weather[0] == "Sandstorm":
                     if pokemon1.Moves[moveNumber].moveName in ["Solar Beam", "Solar Blade"]:
@@ -2641,6 +2643,9 @@ class Battle():
                                         damage = floor(pokemon2.Stats["HP"] * (-3/4))
                                     else:
                                         damage = floor(pokemon2.Stats["HP"] * (-1/2))
+                                # Corrosive Gas removes the opponent's item
+                                elif pokemon1.Moves[moveNumber - 1].moveName == "Corrosive Gas" and not pokemon2.item.consumed:
+                                    pokemon2.item.Consume()
                                 else:
                                     # Certain abilities prevent stats from being lowered
                                     if not (pokemon2.ability.effect[0] == "Clear Body" and (pokemon2.ability.effect[1] in secondaryList[1] or pokemon2.ability.effect[1] == "All")):
@@ -2685,8 +2690,16 @@ class Battle():
                         self.drawCurrentText("Electric Terrain prevents Pokemon from being put to sleep!")
                     else:
                         if secondaryList[2] == "Self":
+                            # Aromatherapy and Heal Bell heal status conditions of whole team
+                            if secondaryList[1] == "Heal Bell":
+                                for healedPokemon in attackingTeam.pokemonList:
+                                    healedPokemon.changeStatus("Healthy")
+                                if pokemon1.Moves[moveNumber - 1].moveName == "Aromatherapy":
+                                    self.drawCurrentText("A soothing aroma blew past!")
+                                else:
+                                    self.drawCurrentText("A bell chimed!")
                             # Cures user's status condition
-                            if (pokemon1.status == "Healthy" or pokemon1.Moves[moveNumber - 1].moveName in ["Refresh", "Rest"]) and not (pokemon1.ability.abilityName == "Leaf Guard" and self.weather[0] == "Sunny Day"):
+                            elif (pokemon1.status == "Healthy" or pokemon1.Moves[moveNumber - 1].moveName in ["Refresh", "Rest"]) and not (pokemon1.ability.abilityName == "Leaf Guard" and self.weather[0] == "Sunny Day"):
                                 pokemon1.changeStatus(secondaryList[1])
                         else:
                             if not pokemon2.intangibility and not (pokemon2.volatile["Substitute"] > 0  and not (pokemon1.Moves[moveNumber - 1].sound or pokemon1.ability.abilityName == "Infiltrator")) or bounce:
@@ -2755,7 +2768,12 @@ class Battle():
                 # Sets up weather if possible
                 elif pokemon1.Moves[moveNumber - 1].stat == "Weather":
                     if not self.weather[0] == pokemon1.Moves[moveNumber - 1].moveName and self.weather[1] < 9:
-                        if pokemon1.Moves[moveNumber - 1].moveName in pokemon1.item.effect and not pokemon1.item.consumed:
+                        if pokemon1.Moves[moveNumber - 1].moveName == "Chilly Reception":
+                            if pokemon1.Moves[moveNumber - 1].moveName in pokemon1.item.effect and not pokemon1.item.consumed:
+                                self.weather = ["Hail", 8]
+                            else:
+                                self.weather = ["Hail", 5]  
+                        elif pokemon1.Moves[moveNumber - 1].moveName in pokemon1.item.effect and not pokemon1.item.consumed:
                             self.weather = [pokemon1.Moves[moveNumber - 1].moveName, 8]
                         else:
                             self.weather = [pokemon1.Moves[moveNumber - 1].moveName, 5]
@@ -2765,6 +2783,16 @@ class Battle():
                             self.drawCurrentText("The sunlight turned harsh!")
                         elif self.weather[0] == "Hail":
                             self.drawCurrentText("It started to hail!")
+                            # Switches to a party member
+                            if pokemon1.Moves[moveNumber - 1].moveName == "Chilly Reception" and attackingTeam.alivePokemon > 1:
+                                if not computer:
+                                    position = int(self.team1.switchMenu())
+                                else:
+                                    position = randint(1, 6)
+                                    while attackingTeam.pokemonList[position - 1].currentHp <= 0  or attackingTeam.pokemonList[position - 1] == pokemon1:
+                                        position = randint(1, 6)
+                                attackingTeam.Switch(position)
+                                self.switchIn(attackingTeam.activePokemon, defendingTeam.activePokemon)
                         elif self.weather[0] == "Sandstorm":
                             self.drawCurrentText("A sandstorm kicked up!")
                         if not self.cloudNine:
@@ -4020,7 +4048,10 @@ class Battle():
             else:
                 # Heals using Sitrus Berry
                 if self.team1.activePokemon.currentHp < .5 * self.team1.activePokemon.Stats["HP"] or not self.team1.activePokemon.item.consumable:
-                    self.team1.activePokemon.currentHp += floor(self.team1.activePokemon.item.multiplier * self.team1.activePokemon.Stats["HP"])
+                    if self.team1.activePokemon.item.itemName == "Black Sludge" and not (self.team1.activePokemon.Type1.typeName == "Poison" or self.team1.activePokemon.Type2.typeName == "Poison" or self.team1.activePokemon.ability.abilityName == "Magic Guard" ):
+                        self.team1.activePokemon.currentHp -= floor(2 * self.team1.activePokemon.item.multiplier * self.team1.activePokemon.Stats["HP"])
+                    else:
+                        self.team1.activePokemon.currentHp += floor(self.team1.activePokemon.item.multiplier * self.team1.activePokemon.Stats["HP"])
                     if self.team1.activePokemon.item.consumable:
                         self.team1.activePokemon.item.Consume()
                         if self.team1.activePokemon.ability.abilityName == "Cheek Pouch":
@@ -4066,7 +4097,10 @@ class Battle():
                         self.team2.activePokemon.changeStatus("Confuse")
             else:
                 if self.team2.activePokemon.currentHp < .5 * self.team2.activePokemon.Stats["HP"] or not self.team2.activePokemon.item.consumable:
-                    self.team2.activePokemon.currentHp += floor(self.team2.activePokemon.item.multiplier * self.team2.activePokemon.Stats["HP"])
+                    if self.team2.activePokemon.item.itemName == "Black Sludge" and not (self.team2.activePokemon.Type1.typeName == "Poison" or self.team2.activePokemon.Type2.typeName == "Poison" or self.team2.activePokemon.ability.abilityName == "Magic Guard" ):
+                        self.team2.activePokemon.currentHp -= floor(2 * self.team2.activePokemon.item.multiplier * self.team2.activePokemon.Stats["HP"])
+                    else:
+                        self.team2.activePokemon.currentHp += floor(self.team2.activePokemon.item.multiplier * self.team2.activePokemon.Stats["HP"])
                     if self.team2.activePokemon.item.consumable:
                         self.team2.activePokemon.item.Consume()
                         if self.team2.activePokemon.ability.abilityName == "Cheek Pouch":
